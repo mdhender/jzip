@@ -4,7 +4,7 @@
 
 This repository contains Jzip 2.1, a circa-2000 Z-Machine interpreter sourced from <https://www.ifwiki.org/Jzip>. The immediate goal is to port it just far enough to compile and run natively on a current Apple Silicon Mac, then use its command-line interpreter and Quetzal support for compatibility testing against a modern Frotz installation.
 
-Keep this a conservative portability effort. Preserve interpreter behavior and file-format semantics; do not modernize or redesign unrelated code.
+Keep the initial port conservative: preserve interpreter behavior and file-format semantics while establishing a trustworthy baseline. This is a deliberate macOS fork, not an effort to preserve every historical target. Remove obsolete platform files and code once their irrelevance to the macOS interpreter and Quetzal tooling is understood; Git history is the archive.
 
 ## Platform Constraints
 
@@ -17,7 +17,8 @@ Keep this a conservative portability effort. Preserve interpreter behavior and f
 
 ## Relevant Code
 
-- `unixio.mak`: legacy Unix build and the starting point for the macOS build.
+- `Makefile`: supported native macOS build.
+- `unixio.mak`: legacy Unix build retained only until the macOS build and required source set are established.
 - `unixio.c`: terminal/termcap implementation used by the Unix build.
 - `ztypes.h`: shared configuration, VM types, constants, globals, and function declarations. `USE_QUETZAL` is enabled here.
 - `fileio.c`: story-file access plus save/restore dispatch. With `USE_ZLIB`, modern zlib defines `gzFile` as an opaque pointer typedef; the legacy `gzFile *` declarations are therefore one pointer level too deep.
@@ -30,20 +31,20 @@ Jzip supports Z-code versions 1-5 and 8. Do not imply support for versions 6 or 
 
 ## Build Workflow
 
-Use the existing Unix makefile directly until a native project `Makefile` is intentionally added:
+Use the native root makefile:
 
 ```sh
-make -f unixio.mak
+make
 ```
 
-The intended products are `jzip`, `jzexe`, and `ckifzs`. The historical link dependencies are zlib and termcap (`-lz -ltermcap`); on macOS, confirm whether the system SDK provides the needed compatibility interfaces before changing libraries.
+The supported products are `jzip` and `ckifzs`. `jzexe` creates historical self-contained DOS/Linux executables and is not part of the macOS port unless a concrete test requires it. The macOS SDK supplies the current link dependencies, zlib and termcap (`-lz -ltermcap`).
 
 As of the untouched import, the command above reaches `fileio.c` and fails because `gzFile *` is passed to modern zlib APIs expecting `gzFile`. Treat this as the first known porting issue, not as a reason to disable zlib or Quetzal.
 
 Clean generated files with:
 
 ```sh
-make -f unixio.mak realclean
+make clean
 ```
 
 Do not commit binaries, object files, generated save files, downloaded story files, or copyrighted game data.
@@ -57,14 +58,14 @@ Do not commit binaries, object files, generated save files, downloaded story fil
 - Fix declarations and ownership at their source rather than adding casts that silence incompatible-pointer warnings.
 - Do not truncate host file positions merely to recreate 32-bit behavior. Convert to a fixed-width format value only after checking its valid range.
 - Treat compiler warnings about pointer types, integer conversion, format strings, signedness, and implicit declarations as possible LP64 bugs; investigate rather than suppressing them globally.
-- Keep platform-specific changes in the Unix/macOS path. Do not edit DOS, OS/2, Atari, Borland, or Quick C ports unless a shared declaration must remain compatible with them.
+- Keep platform-specific changes in the Unix/macOS path. Do not spend effort preserving DOS, OS/2, Atari, Borland, or Quick C builds. Before deleting legacy code, confirm that the native interpreter does not reference it; then prefer deletion over maintaining dead compatibility branches.
 - Do not change story/save compatibility to match a single fixture. The implementation must follow the Z-Machine and Quetzal formats generally.
 
 ## Verification
 
 Scale verification with each change, but a porting change is not complete merely because it compiles.
 
-1. Start from a clean tree and build with `make -f unixio.mak`.
+1. Start from a clean tree and build with `make`.
 2. Run `./jzip -v` and `./jzip -h` as non-interactive smoke checks.
 3. Run `./ckifzs save-file` on each Quetzal fixture and require a successful structural check.
 4. Launch Jzip with the story file that matches the save file:
