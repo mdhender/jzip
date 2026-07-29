@@ -45,7 +45,9 @@ They help assure us that this package works.
 From the repository root, run:
 
 ```sh
-make test
+cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
+cmake --build cmake-build-debug
+ctest --test-dir cmake-build-debug --output-on-failure
 ```
 
 The test uses the Zork I transcript documented in `frotz/README.md`. It drives

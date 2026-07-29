@@ -5,6 +5,8 @@ set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 
+option(ENABLE_SANITIZERS "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+
 find_package(ZLIB REQUIRED)
 find_library(TERMCAP_LIBRARY NAMES termcap REQUIRED)
 
@@ -43,6 +45,23 @@ target_link_libraries(jzip PRIVATE
 
 add_executable(ckifzs ckifzs.c)
 
+if(ENABLE_SANITIZERS)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "^(AppleClang|Clang|GNU)$")
+        message(FATAL_ERROR "ENABLE_SANITIZERS requires Clang, AppleClang, or GCC")
+    endif()
+
+    set(SANITIZER_FLAGS
+        -fsanitize=address,undefined
+        -fno-omit-frame-pointer
+        -g
+    )
+
+    foreach(target jzip ckifzs)
+        target_compile_options(${target} PRIVATE ${SANITIZER_FLAGS})
+        target_link_options(${target} PRIVATE ${SANITIZER_FLAGS})
+    endforeach()
+endif()
+
 include(CTest)
 
 set(DFROTZ_EXECUTABLE "/opt/homebrew/bin/dfrotz" CACHE FILEPATH
@@ -56,6 +75,8 @@ if(BUILD_TESTING)
             "JZIP=$<TARGET_FILE:jzip>"
             "CKIFZS=$<TARGET_FILE:ckifzs>"
             "DFROTZ=${DFROTZ_EXECUTABLE}"
+            "ASAN_OPTIONS=halt_on_error=1"
+            "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1"
             /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/testdata/test-interop.sh
     )
 endif()

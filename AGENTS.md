@@ -17,8 +17,7 @@ Keep the initial port conservative: preserve interpreter behavior and file-forma
 
 ## Relevant Code
 
-- `Makefile`: supported native macOS command-line build.
-- `CMakeLists.txt`: equivalent CMake build used by CLion, including the interoperability test.
+- `CMakeLists.txt`: supported native macOS and CLion build, including the interoperability test and optional sanitizers.
 - `unixio.mak`: legacy Unix build retained only until the macOS build and required source set are established.
 - `unixio.c`: terminal/termcap implementation used by the Unix build.
 - `ztypes.h`: shared configuration, VM types, constants, globals, and function declarations. `USE_QUETZAL` is enabled here.
@@ -33,18 +32,35 @@ Jzip supports Z-code versions 1-5 and 8. Do not imply support for versions 6 or 
 
 ## Build Workflow
 
-Use the native root makefile:
+Configure and build outside the source tree:
 
 ```sh
-make
+cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
+cmake --build cmake-build-debug
 ```
 
 The supported products are `jzip` and `ckifzs`. `jzexe` creates historical self-contained DOS/Linux executables and is not part of the macOS port unless a concrete test requires it. The macOS SDK supplies the current link dependencies, zlib and termcap (`-lz -ltermcap`).
 
-Clean generated files with:
+Run the interoperability test with:
 
 ```sh
-make clean
+ctest --test-dir cmake-build-debug --output-on-failure
+```
+
+Configure a separate sanitizer build with:
+
+```sh
+cmake -S . -B cmake-build-sanitize \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DENABLE_SANITIZERS=ON
+cmake --build cmake-build-sanitize
+ctest --test-dir cmake-build-sanitize --output-on-failure
+```
+
+Clean a configured build with:
+
+```sh
+cmake --build cmake-build-debug --target clean
 ```
 
 Do not commit binaries, object files, generated save files, downloaded story files, or copyrighted game data.
@@ -65,13 +81,13 @@ Do not commit binaries, object files, generated save files, downloaded story fil
 
 Scale verification with each change, but a porting change is not complete merely because it compiles.
 
-1. Start from a clean tree and build with `make`.
-2. Run `./jzip -v` and `./jzip -h` as non-interactive smoke checks.
-3. Run `./ckifzs save-file` on each Quetzal fixture and require a successful structural check.
+1. Configure a fresh build directory and build with CMake.
+2. Run `cmake-build-debug/jzip -v` and `cmake-build-debug/jzip -h` as non-interactive smoke checks.
+3. Run `cmake-build-debug/ckifzs save-file` on each Quetzal fixture and require a successful structural check.
 4. Launch Jzip with the story file that matches the save file:
 
    ```sh
-   ./jzip path/to/story.z5
+   cmake-build-debug/jzip path/to/story.z5
    ```
 
    Exercise restore through the story's normal `restore` command and confirm that play resumes at the expected state. Save-file identity includes the story release, serial number, and checksum, so an arbitrary story file is not a valid substitute.
