@@ -1,4 +1,5 @@
 CC = clang
+DFROTZ ?= /opt/homebrew/bin/dfrotz
 
 CPPFLAGS += -DPOSIX -DHAVE_GETOPT -DHARD_COLORS -DUSE_ZLIB
 CFLAGS ?= -O2
@@ -28,7 +29,7 @@ JZIP_OBJS = \
 TARGETS = jzip ckifzs
 DEPS = $(JZIP_OBJS:.o=.d) ckifzs.d
 
-.PHONY: all clean
+.PHONY: all clean test
 
 all: $(TARGETS)
 
@@ -37,6 +38,9 @@ jzip: $(JZIP_OBJS)
 
 ckifzs: ckifzs.o
 	$(CC) $(LDFLAGS) -o $@ ckifzs.o
+
+test: all
+	DFROTZ="$(DFROTZ)" sh testdata/test-interop.sh
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<

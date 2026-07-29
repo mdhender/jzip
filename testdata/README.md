@@ -6,6 +6,7 @@ Files the tests read. Nothing here is part of the package.
 testdata/
 ├── stories/   Z-machine story files
 ├── frotz/     save files made by Frotz
+├── test-interop.sh
 └── README.md
 ```
 
@@ -38,3 +39,17 @@ Read it before you reuse a story file for anything.
 
 Saves written by Frotz, an established interpreter.
 They help assure us that this package works.
+
+## Interoperability test
+
+From the repository root, run:
+
+```sh
+make test
+```
+
+The test uses the Zork I transcript documented in `frotz/README.md`. It drives
+Jzip through a pseudo-terminal, compares the resulting Kitchen state with
+Frotz, validates both interpreters' saves with `ckifzs`, and restores each
+interpreter's save with the other interpreter. Generated files are kept in a
+temporary directory and removed when the test exits.
