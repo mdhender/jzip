@@ -35,6 +35,10 @@
 #include "ztypes.h"
 #include "jzexe.h"
 
+#ifdef HAVE_GETOPT
+#include <unistd.h>
+#endif
+
 /* File names will be O/S dependent */
 
 #if defined(AMIGA)
@@ -86,8 +90,10 @@ static int strictz_error_count[STRICTZ_NUM_ERRORS];
 
 /* getopt linkages */
 
+#ifndef HAVE_GETOPT
 extern int optind;
 extern const char *optarg;
+#endif
 extern ZINT16 default_fg, default_bg;
 
 #endif /* !defined(AMIGA) */
@@ -452,7 +458,7 @@ int get_file_name( char *file_name, char *default_name, int flag )
          strcpy( default_name, SCRIPT_NAME );
       else if ( flag == GAME_RECORD || flag == GAME_PLAYBACK )
          strcpy( default_name, RECORD_NAME );
-      else if ( flag == GAME_SAVE_AUX || GAME_LOAD_AUX )
+      else if ( flag == GAME_SAVE_AUX || flag == GAME_LOAD_AUX )
          strcpy( default_name, AUXILARY_NAME );
       else                      /* (flag == GAME_SAVE || flag == GAME_RESTORE) */
          strcpy( default_name, SAVE_NAME );

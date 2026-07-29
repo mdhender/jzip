@@ -47,6 +47,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <termcap.h>
 
 /* needed by AIX */
 #if defined(AIX)
@@ -98,7 +99,7 @@ static char *CE, *CL, *CM, *CS, *DL, *MD, *ME, *MR, *SE, *SO, *TE, *TI, *UE, *US
 #define BELL 7
 
 static void display_string( char *s );
-static int wait_for_char(  );
+static int wait_for_char( int );
 static int read_key( int );
 static void set_cbreak_mode( int );
 static void rundown(  );
@@ -111,9 +112,8 @@ void add_command( char *, int );
 int display_command( char * );
 int input_line( int, char *, int, int * );
 int input_character( int );
-static int wait_for_char( int );
 
-void outc( int );
+int outc( int );
 void move_cursor( int, int );
 void get_cursor_position( int *, int * );
 void set_attribute( int );
@@ -121,15 +121,9 @@ void display_char( int );
 
 /* done with editing prototypes */
 
-extern int tgetent(  );
-extern int tgetnum(  );
-extern char *tgetstr(  );
-extern char *tgoto(  );
-extern void tputs(  );
-
-void outc( int c )
+int outc( int c )
 {
-   putchar( c );
+   return putchar( c );
 }                               /* outc */
 
 void initialize_screen(  )

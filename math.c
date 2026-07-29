@@ -229,7 +229,7 @@ void z_random( zword_t a )
       store_operand( 0 );
    else if ( a & 0x8000 )
    {                            /* (a < 0) - used to set seed with #RANDOM */
-      SRANDOM_FUNC( ( unsigned int ) abs( a ) );
+      SRANDOM_FUNC( ( unsigned int ) -( ZINT16 ) a );
       store_operand( 0 );
    }
    else                         /* (a > 0) */

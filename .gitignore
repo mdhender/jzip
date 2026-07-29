@@ -1,0 +1,8 @@
+*.d
+*.o
+/ckifzs
+/jzip
+/*.aux
+/*.rec
+/*.sav
+/*.scr
