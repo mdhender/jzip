@@ -24,6 +24,7 @@ Keep the initial port conservative: preserve interpreter behavior and file-forma
 - `fileio.c`: story-file access plus save/restore dispatch. With `USE_ZLIB`, modern zlib defines `gzFile` as an opaque pointer typedef; the legacy `gzFile *` declarations are therefore one pointer level too deep.
 - `quetzal.c`: Quetzal IFZS serialization and restoration. Audit its `unsigned long` format values carefully on LP64.
 - `ckifzs.c`: standalone Quetzal structure checker and a useful independent validation tool.
+- `doc/ckifzs.md`: command reference for the checker.
 - `jzip.c`, `interpre.c`, and the opcode modules: interpreter startup and VM execution.
 - `doc/Building.txt`, `doc/Jzip.txt`, and `doc/jzip.6`: original build and command-line documentation. Treat these as historical references; verify details against current code.
 
@@ -38,8 +39,6 @@ make
 ```
 
 The supported products are `jzip` and `ckifzs`. `jzexe` creates historical self-contained DOS/Linux executables and is not part of the macOS port unless a concrete test requires it. The macOS SDK supplies the current link dependencies, zlib and termcap (`-lz -ltermcap`).
-
-As of the untouched import, the command above reaches `fileio.c` and fails because `gzFile *` is passed to modern zlib APIs expecting `gzFile`. Treat this as the first known porting issue, not as a reason to disable zlib or Quetzal.
 
 Clean generated files with:
 
@@ -75,9 +74,9 @@ Scale verification with each change, but a porting change is not complete merely
    ```
 
    Exercise restore through the story's normal `restore` command and confirm that play resumes at the expected state. Save-file identity includes the story release, serial number, and checksum, so an arbitrary story file is not a valid substitute.
-5. Test the same story/save pair with command-line Frotz and compare observable restored state and subsequent commands. Record the exact Jzip and Frotz invocations and versions in test notes.
+5. Test the same story/save pair with command-line Frotz at `/opt/homebrew/bin/dfrotz` and compare observable restored state and subsequent commands. Record the exact Jzip and Frotz invocations and versions in test notes.
 6. When save support changes, test both directions when possible: Jzip must read a Frotz-created Quetzal file, and Frotz plus `ckifzs` must read a Jzip-created file.
 
-Jzip uses terminal control and interactive input, so tests that exercise gameplay should run in a real terminal or a PTY rather than assuming ordinary stdin/stdout redirection faithfully represents behavior. Keep external story files and Quetzal fixtures outside version control unless they are explicitly known to be redistributable.
+Jzip uses terminal control and interactive input, so tests that exercise gameplay should run in a real terminal or a PTY rather than assuming ordinary stdin/stdout redirection faithfully represents behavior. Keep external story files and Quetzal fixtures outside version control unless they are explicitly known to be redistributable. The committed Zork fixtures are separately distributed under the MIT licenses adjacent to the story files.
 
 If a required fixture, matching story file, or Frotz executable is unavailable, complete the build and smoke checks that are possible and state exactly which compatibility checks remain unverified.
