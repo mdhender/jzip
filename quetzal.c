@@ -29,6 +29,7 @@
  * routines to handle QUETZAL save format
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include "ztypes.h"
 
@@ -47,7 +48,7 @@
 
 #if defined(USE_QUETZAL)        /* don't compile anything otherwise */
 
-typedef unsigned long ul_t;
+typedef uint32_t quetzal_u32_t;
 
 /* IDs of chunks we understand */
 #define ID_FORM 0x464f524d
@@ -64,8 +65,8 @@ typedef unsigned long ul_t;
 #define write_word(fp,w) \
     (write_bytx(fp,(w)>> 8) && write_bytx(fp,(w)))
 #define write_long(fp,l) \
-    (write_bytx(fp,(ul_t)(l)>>24) && write_bytx(fp,(ul_t)(l)>>16) && \
-     write_bytx(fp,(ul_t)(l)>> 8) && write_bytx(fp,(ul_t)(l))) 
+    (write_bytx(fp,(quetzal_u32_t)(l)>>24) && write_bytx(fp,(quetzal_u32_t)(l)>>16) && \
+     write_bytx(fp,(quetzal_u32_t)(l)>> 8) && write_bytx(fp,(quetzal_u32_t)(l)))
 #define write_chnk(fp,id,len) \
     (write_long(fp,id)      && write_long(fp,len))
 #define write_run(fp,run) \
@@ -82,7 +83,8 @@ int save_quetzal( FILE * sfp, gzFile gfp )
 int save_quetzal( FILE * sfp, FILE * gfp )
 #endif
 {
-   ul_t ifzslen = 0, cmemlen = 0, stkslen = 0, tmp_pc;
+   quetzal_u32_t ifzslen = 0, cmemlen = 0, stkslen = 0;
+   unsigned long tmp_pc;
    int c;
    zword_t i, j, n, init_fp, tmp_fp, nstk, nvars, args;
    zword_t frames[STACK_SIZE / 4 + 1];
@@ -105,7 +107,7 @@ int save_quetzal( FILE * sfp, FILE * gfp )
          return FALSE;
    if ( !write_word( sfp, h_checksum ) )
       return FALSE;
-   if ( !write_long( sfp, ( ( ul_t ) pc ) << 8 ) ) /* includes pad byte */
+   if ( !write_long( sfp, ( ( quetzal_u32_t ) pc ) << 8 ) ) /* includes pad byte */
       return FALSE;             
 
    /* write CMem chunk */
@@ -189,7 +191,7 @@ int save_quetzal( FILE * sfp, FILE * gfp )
       nvars = ( stack[tmp_fp + 1] & VARS_MASK ) >> VAR_SHIFT;
       args = stack[tmp_fp + 1] & ARGS_MASK;
       nstk = tmp_fp - frames[i - 1] - nvars - 4;
-      tmp_pc = stack[tmp_fp + 3] + ( ul_t ) stack[tmp_fp + 4] * PAGE_SIZE;
+      tmp_pc = stack[tmp_fp + 3] + ( unsigned long ) stack[tmp_fp + 4] * PAGE_SIZE;
       switch ( stack[tmp_fp + 1] & TYPE_MASK )
       {
          case FUNCTION:
@@ -262,7 +264,7 @@ static int read_word( FILE * fp, zword_t * result )
  * attempt to read a longword; return TRUE on success
  */
 
-static int read_long( FILE * fp, ul_t * result )
+static int read_long( FILE * fp, quetzal_u32_t * result )
 {
    int a, b, c, d;
 
@@ -274,7 +276,8 @@ static int read_long( FILE * fp, ul_t * result )
       return FALSE;
    if ( ( d = get_c( fp ) ) == EOF )
       return FALSE;
-   *result = ( ( ul_t ) a << 24 ) | ( ( ul_t ) b << 16 ) | ( ( ul_t ) c << 8 ) | d;
+   *result = ( ( quetzal_u32_t ) a << 24 ) | ( ( quetzal_u32_t ) b << 16 ) |
+         ( ( quetzal_u32_t ) c << 8 ) | ( quetzal_u32_t ) d;
 #ifdef QDEBUG
    printf( "%c%c%c%c", a, b, c, d );
 #endif
@@ -299,7 +302,8 @@ int restore_quetzal( FILE * sfp, gzFile gfp )
 int restore_quetzal( FILE * sfp, FILE * gfp )
 #endif
 {
-   ul_t ifzslen, currlen, tmpl, skip = 0; 
+   quetzal_u32_t ifzslen, currlen, tmpl, skip = 0;
+   unsigned long return_pc;
    zword_t i, tmpw;
    zbyte_t progress = GOT_NONE; 
    int x, y;
@@ -332,7 +336,10 @@ int restore_quetzal( FILE * sfp, FILE * gfp )
       if ( ifzslen < currlen )
          return FALSE;
       skip = currlen & 1;
-      ifzslen -= currlen + skip;
+      if ( ifzslen - currlen < skip )
+         return FALSE;
+      ifzslen -= currlen;
+      ifzslen -= skip;
       switch ( tmpl )
       {
          case ID_IFhd:
@@ -364,14 +371,14 @@ int restore_quetzal( FILE * sfp, FILE * gfp )
             }
             if ( ( x = get_c( sfp ) ) == EOF )
                return FALSE;
-            pc = ( ul_t ) x << 16;
+            pc = ( unsigned long ) x << 16;
             if ( ( x = get_c( sfp ) ) == EOF )
                return FALSE;
-            pc |= ( ul_t ) x << 8;
+            pc |= ( unsigned long ) x << 8;
             if ( ( x = get_c( sfp ) ) == EOF )
                return FALSE;
-            pc |= ( ul_t ) x;
-            for ( i = 13; ( ul_t ) i < currlen; ++i ) 
+            pc |= ( unsigned long ) x;
+            for ( i = 13; ( quetzal_u32_t ) i < currlen; ++i )
                ( void ) get_c( sfp ); /* skip rest of chunk */
             break;
          case ID_Stks:
@@ -393,7 +400,7 @@ int restore_quetzal( FILE * sfp, FILE * gfp )
                if ( !read_word( sfp, &tmpw ) )
                   return FALSE;
                currlen -= 8;
-               if ( currlen < (unsigned long)(tmpw * 2) )
+               if ( currlen < ( quetzal_u32_t ) ( tmpw * 2 ) )
                   return FALSE;
                for ( i = 0; i < tmpw; ++i )
                   if ( !read_word( sfp, stack + ( --sp ) ) )
@@ -412,6 +419,7 @@ int restore_quetzal( FILE * sfp, FILE * gfp )
                /* read PC, procedure flag, and arg count */
                if ( !read_long( sfp, &tmpl ) )
                   return FALSE;
+               return_pc = ( unsigned long ) tmpl;
                y = ( zword_t ) tmpl & 0x0F;
                tmpw = y << VAR_SHIFT; /* number of variables */
                /* read result variable  */
@@ -421,23 +429,23 @@ int restore_quetzal( FILE * sfp, FILE * gfp )
                if ( tmpl & 0x10 )
                {
                   tmpw |= PROCEDURE;
-                  tmpl >>= 8;
+                  return_pc >>= 8;
                }
                else
                {
                   tmpw |= FUNCTION;
-                  tmpl >>= 8;
-                  --tmpl;
+                  return_pc >>= 8;
+                  --return_pc;
                   /* sanity check on result variable */
-                  if ( read_data_byte( &tmpl ) != ( zbyte_t ) x )
+                  if ( read_data_byte( &return_pc ) != ( zbyte_t ) x )
                   {
                      output_line( "error: wrong variable number on stack (wrong story file?)." );
                      return FALSE;
                   }
-                  --tmpl;       /* read_data_byte increments it */
+                  --return_pc;  /* read_data_byte increments it */
                }
-               stack[--sp] = ( zword_t ) ( tmpl / PAGE_SIZE );
-               stack[--sp] = ( zword_t ) ( tmpl % PAGE_SIZE );
+               stack[--sp] = ( zword_t ) ( return_pc / PAGE_SIZE );
+               stack[--sp] = ( zword_t ) ( return_pc % PAGE_SIZE );
                stack[--sp] = fp;
 
                if ( ( x = get_c( sfp ) ) == EOF )
@@ -464,7 +472,7 @@ int restore_quetzal( FILE * sfp, FILE * gfp )
                   output_line( "error: this save-file uses more stack than I can cope with." );
                   return FALSE;
                }
-               if ( currlen < (unsigned long)(tmpw * 2) )
+               if ( currlen < ( quetzal_u32_t ) ( tmpw * 2 ) )
                   return FALSE;
                for ( i = 0; i < tmpw; ++i )
                   if ( !read_word( sfp, stack + ( --sp ) ) )

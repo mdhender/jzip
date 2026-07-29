@@ -35,6 +35,7 @@
 #define LONG_DUMP
 */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -68,13 +69,13 @@ unsigned char read_byte( FILE * fp )
 
 #if defined SHORT_DUMP || defined LONG_DUMP 
 
-void coredump( unsigned long ul, unsigned char uch ) 
+void coredump( uint32_t offset, unsigned char uch )
 {                               
-   if ( !( ul % 16 ) )          
-      printf( "\n    %08X  ", ul ); 
-   else if ( !( ul % 8 ) )      
+   if ( !( offset % 16 ) )
+      printf( "\n    %08" PRIX32 "  ", offset );
+   else if ( !( offset % 8 ) )
       fputs( "  ", stdout );    
-   else if ( !( ul % 4 ) )      
+   else if ( !( offset % 4 ) )
       putchar( ' ' );           
    printf( "%02X", uch );       
 }                               
@@ -89,7 +90,7 @@ int main( int argc, char **argv )
    unsigned char status = 0;
    char id[5];
    ZUINT16 errors = 0;
-   unsigned long filelen, cklen, odd_byte; 
+   uint32_t filelen, cklen, odd_byte;
 
    if ( argc == 2 && strcmp( argv[1], "-" ) )
    {
@@ -131,7 +132,12 @@ int main( int argc, char **argv )
       exit( EXIT_FAILURE );
    }
 
-   fprintf( stdout, "FORM %lu IFZS\n", filelen );
+   fprintf( stdout, "FORM %" PRIu32 " IFZS\n", filelen );
+   if ( filelen < 4 )
+   {
+      printf( "*** FORM chunk is too short to contain an IFZS type\n" );
+      exit( EXIT_FAILURE );
+   }
    filelen -= 4;
    if ( filelen & 1 )
    {
@@ -145,7 +151,8 @@ int main( int argc, char **argv )
       /* check there's enough of the IFZS chunk left */
       if ( filelen < 8 )
       {
-         printf( "*** IFZS chunk too short to contain another chunk (%lu bytes left)\n", filelen );
+         printf( "*** IFZS chunk too short to contain another chunk (%" PRIu32
+               " bytes left)\n", filelen );
          exit( EXIT_FAILURE );
       }
 
@@ -169,9 +176,9 @@ int main( int argc, char **argv )
       {
          cklen = ( cklen << 8 ) | read_byte( fp );
       }
-      odd_byte = cklen & 1l;    
+      odd_byte = cklen & 1u;
       id[4] = ( unsigned char ) 0;
-      printf( "  %s %6lu", id, cklen );
+      printf( "  %s %6" PRIu32, id, cklen );
 
       /* if it's a known chunk id, print more information */
       if ( !strncmp( id, "IFhd", 4 ) )
@@ -231,7 +238,7 @@ int main( int argc, char **argv )
       }
       else if ( !strncmp( id, "CMem", 4 ) )
       {
-         unsigned long ul1, ul2; 
+         uint32_t ul1, ul2;
 
          printf( " (compressed memory)" ); 
 #if defined SHORT_DUMP          
@@ -459,7 +466,7 @@ int main( int argc, char **argv )
                      }          
                      cklen -= 4;
                      filelen -= 4; 
-                     printf( "  %lu bytes of data", cklen );
+                     printf( "  %" PRIu32 " bytes of data", cklen );
                   }             
                }                
             }                   
@@ -471,7 +478,7 @@ int main( int argc, char **argv )
          printf( " (annotation)" ); 
          if ( cklen >= 1 )      
          {                      
-            unsigned long l;    
+            uint32_t l;
             unsigned char uch1; 
 
             fputs( "    ", stdout ); 
@@ -489,7 +496,7 @@ int main( int argc, char **argv )
          printf( " (author)" ); 
          if ( cklen >= 1 )      
          {                      
-            unsigned long l;    
+            uint32_t l;
             unsigned char uch1; 
 
             fputs( "    ", stdout ); 
@@ -507,7 +514,7 @@ int main( int argc, char **argv )
          printf( " (name of content)" ); 
          if ( cklen >= 1 )      
          {                      
-            unsigned long l;    
+            uint32_t l;
             unsigned char uch1; 
 
             fputs( "    ", stdout ); 
@@ -525,7 +532,7 @@ int main( int argc, char **argv )
          printf( " (copyright on content)" ); 
          if ( cklen >= 1 )      
          {                      
-            unsigned long l;    
+            uint32_t l;
             unsigned char uch1; 
 
             fputs( "    ", stdout ); 
@@ -540,32 +547,40 @@ int main( int argc, char **argv )
       }
       else if ( !strncmp( id, "    ", 4 ) )
       {
-         printf( " (%lu-byte filler)\n", cklen );
+         printf( " (%" PRIu32 "-byte filler)\n", cklen );
       }
       else
       {
-         printf( "\n*** Unknown %lu-byte chunk type found.\n", cklen );
+         printf( "\n*** Unknown %" PRIu32 "-byte chunk type found.\n", cklen );
          ++errors;
       }
       filelen -= 8;
 
-      if ( cklen > filelen )
+      if ( cklen > filelen || filelen - cklen < odd_byte )
       {
-         printf( "*** Chunk extends past end of IFZS chunk (%lu left in IFZS)\n", filelen );
+         printf( "*** Chunk extends past end of IFZS chunk (%" PRIu32
+               " left in IFZS)\n", filelen );
          exit( EXIT_FAILURE );
       }
-      cklen = ( cklen + odd_byte ); 
       filelen -= cklen;
       for ( ; cklen > 0; --cklen )
       {
          ( void ) read_byte( fp ); /* skip chunk contents */
       }
+      if ( odd_byte )
+      {
+         --filelen;
+         ( void ) read_byte( fp ); /* skip pad byte */
+      }
    }
 
    if ( getc( fp ) != EOF )
    {
-      for ( filelen = 1; getc( fp ) != EOF; ++filelen ) ;
-      printf( "*** Spurious data (%lu bytes) past specified chunk length\n", filelen );
+      uint64_t trailing_bytes;
+
+      for ( trailing_bytes = 1; getc( fp ) != EOF; ++trailing_bytes ) ;
+      printf( "*** Spurious data (%" PRIu64 " bytes) past specified chunk length\n",
+            trailing_bytes );
       ++errors;
    }
 
