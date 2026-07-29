@@ -6,11 +6,23 @@ root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 story="$root/testdata/stories/zork1-r119-880429.z3"
 fixture="$root/testdata/frotz/zork1-r119-kitchen.qzl"
 dfrotz=${DFROTZ:-/opt/homebrew/bin/dfrotz}
+jzip=${JZIP:-$root/jzip}
+ckifzs=${CKIFZS:-$root/ckifzs}
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/jzip-interop.XXXXXX")
 trap 'rm -rf "$tmp"' EXIT INT TERM
 
 if [ ! -x "$dfrotz" ]; then
     echo "Frotz executable not found: $dfrotz" >&2
+    exit 1
+fi
+
+if [ ! -x "$jzip" ]; then
+    echo "Jzip executable not found: $jzip" >&2
+    exit 1
+fi
+
+if [ ! -x "$ckifzs" ]; then
+    echo "ckifzs executable not found: $ckifzs" >&2
     exit 1
 fi
 
@@ -31,12 +43,12 @@ require_text()
 
 # Drive Jzip through a PTY because its terminal interface reads keystrokes and
 # emits cursor-control sequences rather than behaving as a line filter.
-ROOT=$root STORY=$story TMP=$tmp expect <<'EOF'
+JZIP=$jzip STORY=$story TMP=$tmp expect <<'EOF'
 set timeout 15
 log_user 0
 expect_before timeout { exit 1 }
 cd "$env(TMP)"
-spawn env TERM=xterm "$env(ROOT)/jzip" "$env(STORY)"
+spawn env TERM=xterm "$env(JZIP)" "$env(STORY)"
 expect ">"
 send "north\r"
 expect ">"
@@ -60,15 +72,15 @@ expect "Hit any key to exit."
 send "x"
 expect eof
 EOF
-"$root/ckifzs" "$tmp/jzip.qzl" >"$tmp/ckifzs-jzip.log"
+"$ckifzs" "$tmp/jzip.qzl" >"$tmp/ckifzs-jzip.log"
 
 # Restore the committed Frotz fixture in Jzip.
-ROOT=$root STORY=$story TMP=$tmp FIXTURE=$fixture expect <<'EOF'
+JZIP=$jzip STORY=$story TMP=$tmp FIXTURE=$fixture expect <<'EOF'
 set timeout 15
 log_user 0
 expect_before timeout { exit 1 }
 cd "$env(TMP)"
-spawn env TERM=xterm "$env(ROOT)/jzip" "$env(STORY)"
+spawn env TERM=xterm "$env(JZIP)" "$env(STORY)"
 expect ">"
 send "restore\r"
 expect "Enter a file name."
@@ -99,7 +111,7 @@ EOF
 require_text "$tmp/frotz-save.log" "Kitchen"
 require_text "$tmp/frotz-save.log" "Score: 10       Moves: 4"
 require_text "$tmp/frotz-restore.log" "You are in the kitchen of the white house."
-"$root/ckifzs" "$tmp/frotz.qzl" >"$tmp/ckifzs-frotz.log"
+"$ckifzs" "$tmp/frotz.qzl" >"$tmp/ckifzs-frotz.log"
 
 # Restore Jzip's temporary save in Frotz.
 (

@@ -17,7 +17,8 @@ Keep the initial port conservative: preserve interpreter behavior and file-forma
 
 ## Relevant Code
 
-- `Makefile`: supported native macOS build.
+- `Makefile`: supported native macOS command-line build.
+- `CMakeLists.txt`: equivalent CMake build used by CLion, including the interoperability test.
 - `unixio.mak`: legacy Unix build retained only until the macOS build and required source set are established.
 - `unixio.c`: terminal/termcap implementation used by the Unix build.
 - `ztypes.h`: shared configuration, VM types, constants, globals, and function declarations. `USE_QUETZAL` is enabled here.
