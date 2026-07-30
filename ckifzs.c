@@ -67,6 +67,85 @@ static unsigned char read_byte( FILE * fp )
    return ( unsigned char ) c;
 }
 
+static int check_stacks( FILE *fp, uint32_t length )
+{
+   uint32_t remaining = length;
+   uint32_t frame = 0;
+
+   while ( remaining > 0 )
+   {
+      uint32_t return_pc;
+      uint32_t words;
+      uint16_t stack_words;
+      unsigned char flags;
+      unsigned char result;
+      unsigned char arguments;
+      unsigned int locals;
+      uint32_t i;
+
+      ++frame;
+      if ( remaining < 8 )
+      {
+         printf( "*** Stks frame %" PRIu32 " has only %" PRIu32
+               " bytes; at least 8 are required.\n", frame, remaining );
+         while ( remaining-- > 0 )
+            ( void ) read_byte( fp );
+         return 0;
+      }
+
+      return_pc = ( uint32_t ) read_byte( fp ) << 16;
+      return_pc |= ( uint32_t ) read_byte( fp ) << 8;
+      return_pc |= read_byte( fp );
+      flags = read_byte( fp );
+      result = read_byte( fp );
+      arguments = read_byte( fp );
+      stack_words = ( uint16_t ) read_byte( fp ) << 8;
+      stack_words |= read_byte( fp );
+      remaining -= 8;
+
+      locals = flags & 0x0Fu;
+      words = locals + ( uint32_t ) stack_words;
+      if ( words > remaining / 2 )
+      {
+         printf( "*** Stks frame %" PRIu32 " requires %" PRIu32
+               " value bytes, but only %" PRIu32 " remain.\n",
+               frame, words * 2, remaining );
+         while ( remaining-- > 0 )
+            ( void ) read_byte( fp );
+         return 0;
+      }
+
+#if defined SHORT_DUMP || defined LONG_DUMP
+      printf( "    PC: %6" PRIX32 "  Flags: %02X  Return: %02X"
+            "  Args: %02X  Local stack use: %u\n",
+            return_pc, flags, result, arguments, stack_words );
+#else
+      ( void ) return_pc;
+      ( void ) result;
+      ( void ) arguments;
+#endif
+
+      for ( i = 0; i < words; ++i )
+      {
+         unsigned int value = ( unsigned int ) read_byte( fp ) << 8;
+
+         value |= read_byte( fp );
+#if defined SHORT_DUMP || defined LONG_DUMP
+         if ( !( i % 8 ) )
+            fputs( "     ", stdout );
+         printf( " %04X", value );
+         if ( i % 8 == 7 || i + 1 == words )
+            putchar( '\n' );
+#else
+         ( void ) value;
+#endif
+      }
+      remaining -= words * 2;
+   }
+
+   return 1;
+}
+
 #if defined SHORT_DUMP || defined LONG_DUMP 
 
 static void coredump( uint32_t offset, unsigned char uch )
@@ -90,6 +169,7 @@ int main( int argc, char **argv )
    unsigned char status = 0;
    char id[5];
    ZUINT16 errors = 0;
+   ZUINT16 warnings = 0;
    uint32_t filelen, cklen, odd_byte;
 
    if ( argc == 2 && strcmp( argv[1], "-" ) )
@@ -180,65 +260,87 @@ int main( int argc, char **argv )
       id[4] = ( unsigned char ) 0;
       printf( "  %s %6" PRIu32, id, cklen );
 
+      if ( cklen > filelen - 8 || filelen - 8 - cklen < odd_byte )
+      {
+         printf( "\n*** Chunk extends past end of IFZS chunk (%" PRIu32
+               " left in IFZS)\n", filelen - 8 );
+         exit( EXIT_FAILURE );
+      }
+
       /* if it's a known chunk id, print more information */
       if ( !strncmp( id, "IFhd", 4 ) )
       {
          printf( " (QUETZAL header)\n" );
          if ( status & GOT_HEADER )
          {
-            printf( "*** Only one IFhd chunk is allowed.\n" );
-            ++errors;
+            printf( "*** warning: later IFhd chunk will be ignored by readers.\n" );
+            ++warnings;
          }
-         if ( status & ( GOT_STACKS | GOT_MEMORY ) )
+         else
          {
-            printf( "*** warning: IFhd must come before CMem, UMem, or Stks." );
-            ++errors;
-         }
-         status |= GOT_HEADER;
-         if ( cklen >= 2 )      
-         {                      
-            unsigned char uch1 = read_byte( fp ); 
-            unsigned char uch2 = read_byte( fp ); 
+            if ( status & ( GOT_STACKS | GOT_MEMORY ) )
+            {
+               printf( "*** IFhd must come before CMem, UMem, or Stks.\n" );
+               ++errors;
+            }
+            status |= GOT_HEADER;
+            if ( cklen < 13 )
+            {
+               printf( "*** IFhd chunk is too short; at least 13 bytes are required.\n" );
+               ++errors;
+            }
+            if ( cklen >= 2 )
+            {
+               unsigned char uch1 = read_byte( fp );
+               unsigned char uch2 = read_byte( fp );
 
-            printf( "    Release %u", ( uch1 << 8 ) | uch2 ); 
-            cklen -= 2;
-            filelen -= 2;       
-            if ( cklen >= 6 )   
-            {                   
-               fputs( "  Serial number ", stdout ); 
-               for ( i = 0; i < 6; ++i ) 
-               {                
-                  putchar( read_byte( fp ) ); 
-               }                
-               cklen -= 6;
-               filelen -= 6;    
-               if ( cklen >= 2 ) 
-               {                
-                  uch1 = read_byte( fp );
-                  uch2 = read_byte( fp ); 
-                  printf( "  Checksum: %4X", ( uch1 << 8 ) | uch2 ); 
-                  cklen -= 2;
-                  filelen -= 2; 
-                  if ( cklen >= 3 ) 
-                  {             
-                     unsigned char uch3; 
-
+               printf( "    Release %u", ( uch1 << 8 ) | uch2 );
+               cklen -= 2;
+               filelen -= 2;
+               if ( cklen >= 6 )
+               {
+                  fputs( "  Serial number ", stdout );
+                  for ( i = 0; i < 6; ++i )
+                  {
+                     putchar( read_byte( fp ) );
+                  }
+                  cklen -= 6;
+                  filelen -= 6;
+                  if ( cklen >= 2 )
+                  {
                      uch1 = read_byte( fp );
-                     uch2 = read_byte( fp ); 
-                     uch3 = read_byte( fp ); 
-                     printf( "  PC: %6X", ( uch1 << 16 ) | 
-                             ( uch2 << 8 ) | uch3 ); 
-                     cklen -= 3;
-                     filelen -= 3; 
-                  }             
-               }                
-            }                   
-            putchar( '\n' );    
-         }                      
+                     uch2 = read_byte( fp );
+                     printf( "  Checksum: %4X", ( uch1 << 8 ) | uch2 );
+                     cklen -= 2;
+                     filelen -= 2;
+                     if ( cklen >= 3 )
+                     {
+                        unsigned char uch3;
+
+                        uch1 = read_byte( fp );
+                        uch2 = read_byte( fp );
+                        uch3 = read_byte( fp );
+                        printf( "  PC: %6X", ( uch1 << 16 ) |
+                                ( uch2 << 8 ) | uch3 );
+                        cklen -= 3;
+                        filelen -= 3;
+                     }
+                  }
+               }
+               putchar( '\n' );
+            }
+         }
       }
       else if ( !strncmp( id, "CMem", 4 ) )
       {
          printf( " (compressed memory)" ); 
+         if ( status & GOT_MEMORY )
+         {
+            printf( "\n*** warning: later memory chunk will be ignored by readers.\n" );
+            ++warnings;
+         }
+         else
+         {
 #if defined SHORT_DUMP          
          uint32_t ul1;
 
@@ -272,155 +374,36 @@ int main( int argc, char **argv )
          filelen -= cklen;
          cklen = 0;             
 #endif 
-
-         if ( status & GOT_CMEM )
-         {
-            printf( "*** warning: only one CMem chunk is allowed.\n" );
-            ++errors;
+            status |= GOT_MEMORY | GOT_CMEM;
          }
-         status |= GOT_MEMORY | GOT_CMEM;
       }
       else if ( !strncmp( id, "UMem", 4 ) )
       {
          printf( " (uncompressed memory)\n" );
-         if ( status & GOT_UMEM )
+         if ( status & GOT_MEMORY )
          {
-            printf( "*** warning: only one UMem chunk is allowed.\n" );
-            ++errors;
+            printf( "*** warning: later memory chunk will be ignored by readers.\n" );
+            ++warnings;
          }
-         status |= GOT_MEMORY | GOT_UMEM;
+         else
+            status |= GOT_MEMORY | GOT_UMEM;
       }
       else if ( !strncmp( id, "Stks", 4 ) )
       {
          printf( " (stacks)\n" );
-
-#if defined SHORT_DUMP || defined LONG_DUMP
-         while ( cklen > 0 )
-         {
-            if ( cklen >= 3 )
-            {
-               unsigned char uch1 = read_byte( fp );
-               unsigned char uch2 = read_byte( fp );
-               unsigned char uch3 = read_byte( fp );
-
-               printf( "    PC: %6X", ( uch1 << 16 ) | ( uch2 << 8 ) | uch3 );
-               cklen -= 3;
-               filelen -= 3;
-               if ( cklen >= 1 )
-               {
-                  unsigned char uchFlags = read_byte( fp );
-
-                  printf( "  Flags: %02X", uchFlags );
-                  cklen -= 1;
-                  filelen -= 1;
-                  if ( cklen >= 1 ) 
-                  {             
-                     uch1 = read_byte( fp ); 
-                     if ( uchFlags & 0x10 )
-                     {          
-                     }          
-                     else       
-                     {          
-                        fputs( "  Return: ", stdout ); 
-                        switch ( uch1 ) 
-                        {       
-                           case 0: 
-                              fputs( "sp", stdout ); 
-                              break; 
-                           case 1:
-                           case 2:
-                           case 3:
-                           case 4:
-                           case 5: 
-                           case 6:
-                           case 7:
-                           case 8:
-                           case 9: 
-                           case 10:
-                           case 11:
-                           case 12:
-                           case 13: 
-                           case 14:
-                           case 15: 
-                              printf( "local%d", uch1 - 1 ); 
-                              break; 
-                           default: 
-                              printf( "g%02x", uch1 - 16 ); 
-                              break; 
-                        }       
-                     }          
-                     cklen -= 1;
-                     filelen -= 1; 
-                     if ( cklen >= 1 ) 
-                     {          
-                        uch1 = read_byte( fp ); 
-                        printf( "  Args: %02X", uch1 ); 
-                        cklen -= 1;
-                        filelen -= 1; 
-                        if ( cklen >= 1 ) 
-                        {       
-                           unsigned short usStack; 
-
-                           uch1 = read_byte( fp ); 
-                           uch2 = read_byte( fp ); 
-                           usStack = ( uch1 << 8 ) | uch2; 
-                           printf( "  Local stack use: %d", usStack ); 
-                           cklen -= 2;
-                           filelen -= 2; 
-                           if ( cklen >= ( uchFlags & 0x0Fu ) * 2 ) 
-                           {    
-                              unsigned int i; 
-
-                              for ( i = 0; i < ( uchFlags & 0xFu ); ++i ) 
-                              { 
-                                 uch1 = read_byte( fp ); 
-                                 uch2 = read_byte( fp ); 
-                                 if ( i & 0x07u ) 
-                                 { 
-                                 } 
-                                 else 
-                                 { 
-                                    fputs( "\n     ", stdout ); 
-                                 } 
-                                 printf( " l%d=%04X", i, 
-                                         ( uch1 << 8 ) | uch2 ); 
-                                 cklen -= 2;
-                                 filelen -= 2; 
-                              } 
-                              if ( cklen >= usStack * 2 ) 
-                              { 
-                                 for ( i = 0; i < usStack; ++i ) 
-                                 { 
-                                    if ( i & 0x07u ) 
-                                    { 
-                                    } 
-                                    else 
-                                    { 
-                                       fputs( "\n     ", stdout ); 
-                                    } 
-                                    uch1 = read_byte( fp ); 
-                                    uch2 = read_byte( fp ); 
-                                    printf( " %04X", ( uch1 << 8 ) | 
-                                            uch2 ); 
-                                    cklen -= 2;
-                                    filelen -= 2; 
-                                 } 
-                              } 
-                           }    
-                        }       
-                     }          
-                  }             
-               }                
-            }                   /* endif */
-            putchar( '\n' );    
-         }                      
-#endif 
          if ( status & GOT_STACKS )
          {
-            printf( "*** warning: only one Stks chunk is allowed.\n" );
-            ++errors;
+            printf( "*** warning: later Stks chunk will be ignored by readers.\n" );
+            ++warnings;
          }
-         status |= GOT_STACKS;
+         else
+         {
+            if ( !check_stacks( fp, cklen ) )
+               ++errors;
+            filelen -= cklen;
+            cklen = 0;
+            status |= GOT_STACKS;
+         }
       }
       else if ( !strncmp( id, "IntD", 4 ) )
       {
@@ -454,7 +437,7 @@ int main( int argc, char **argv )
                {                
                   printf( "  contents id %02X", read_byte( fp ) ); 
                   cklen -= 1;
-                  filelen -= 2; 
+                  filelen -= 1;
                   if ( cklen >= 6 ) 
                   {             
                      ( void ) read_byte( fp ); /* discard */
@@ -549,8 +532,7 @@ int main( int argc, char **argv )
       }
       else
       {
-         printf( "\n*** Unknown %" PRIu32 "-byte chunk type found.\n", cklen );
-         ++errors;
+         printf( " (unknown chunk; skipped)\n" );
       }
       filelen -= 8;
 
@@ -577,9 +559,10 @@ int main( int argc, char **argv )
       uint64_t trailing_bytes;
 
       for ( trailing_bytes = 1; getc( fp ) != EOF; ++trailing_bytes ) ;
-      printf( "*** Spurious data (%" PRIu64 " bytes) past specified chunk length\n",
+      printf( "*** warning: spurious data (%" PRIu64
+            " bytes) past specified FORM length\n",
             trailing_bytes );
-      ++errors;
+      ++warnings;
    }
 
    if ( argc == 2 && strcmp( argv[1], "-" ) )
@@ -595,9 +578,9 @@ int main( int argc, char **argv )
       if ( !( status & 0x01 ) )
          printf( " IFhd" );
       if ( !( status & 0x02 ) )
-         printf( " Stks" );
-      if ( !( status & 0x04 ) )
          printf( " CMem/UMem" );
+      if ( !( status & 0x04 ) )
+         printf( " Stks" );
       printf( "\n" );
       i = EXIT_FAILURE;
    }
@@ -609,6 +592,8 @@ int main( int argc, char **argv )
    }
    else
    {
+      if ( warnings > 0 )
+         printf( "\n*** %u warning%s.\n", warnings, ( warnings > 1 ) ? "s" : "" );
       printf( "\nSave file is valid.\n" );
    }
 

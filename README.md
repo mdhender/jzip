@@ -36,6 +36,7 @@ them.
 - Apple Clang
 - CMake 3.20 or newer
 - zlib from the macOS SDK
+- Python 3 for the generated `ckifzs` conformance tests
 - `/opt/homebrew/bin/dfrotz` for the Frotz comparison tests
 
 The Frotz location can be overridden when configuring CMake:
