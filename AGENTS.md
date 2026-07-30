@@ -25,7 +25,7 @@ Keep the initial port conservative: preserve interpreter behavior and file-forma
 - `ckifzs.c`: standalone Quetzal structure checker and a useful independent validation tool.
 - `doc/ckifzs.md`: command reference for the checker.
 - `jzip.c`, `interpre.c`, and the opcode modules: interpreter startup and VM execution.
-- `doc/Jzip.txt` and `doc/jzip.6`: original command-line documentation. Treat these as historical references; verify details against current code.
+- `doc/jzip.md`: command reference for the current scriptable interpreter.
 
 Jzip supports Z-code versions 1-5 and 8. Do not imply support for versions 6 or 7 without implementing and testing it.
 

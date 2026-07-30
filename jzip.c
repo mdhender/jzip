@@ -101,10 +101,6 @@ static void configure( zbyte_t min_version, zbyte_t max_version )
    if ( h_type < min_version || h_type > max_version ||
         ( get_byte( H_CONFIG ) & CONFIG_BYTE_SWAPPED ) )
       fatal( "Wrong game or version" );
-   /*
-    * if (h_type == V6 || h_type == V7)
-    * fatal ("Unsupported zcode version.");
-    */
 
    if ( h_type < V4 )
    {
