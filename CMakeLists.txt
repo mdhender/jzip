@@ -69,6 +69,36 @@ set(DFROTZ_EXECUTABLE "/opt/homebrew/bin/dfrotz" CACHE FILEPATH
 )
 
 if(BUILD_TESTING)
+    function(add_story_smoke_test name story title release)
+        add_test(
+            NAME ${name}
+            COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/testdata/test-story-smoke.sh
+                $<TARGET_FILE:jzip>
+                ${CMAKE_CURRENT_SOURCE_DIR}/testdata/stories/${story}
+                "${title}"
+                "${release}"
+        )
+    endfunction()
+
+    add_story_smoke_test(
+        zork1_story_smoke
+        zork1-r119-880429.z3
+        "ZORK I: The Great Underground Empire"
+        "Release 119 / Serial number 880429"
+    )
+    add_story_smoke_test(
+        zork2_story_smoke
+        zork2-r63-860811.z3
+        "ZORK II: The Wizard of Frobozz"
+        "Release 63 / Serial number 860811"
+    )
+    add_story_smoke_test(
+        zork3_story_smoke
+        zork3-r25-860811.z3
+        "ZORK III: The Dungeon Master"
+        "Release 25 / Serial number 860811"
+    )
+
     add_test(
         NAME jzip_frotz_quetzal_interoperability
         COMMAND ${CMAKE_COMMAND} -E env

@@ -7,6 +7,7 @@ testdata/
 ├── stories/   Z-machine story files
 ├── frotz/     save files made by Frotz
 ├── test-interop.sh
+├── test-story-smoke.sh
 └── README.md
 ```
 
@@ -55,3 +56,7 @@ Jzip through a pseudo-terminal, compares the resulting Kitchen state with
 Frotz, validates both interpreters' saves with `ckifzs`, and restores each
 interpreter's save with the other interpreter. Generated files are kept in a
 temporary directory and removed when the test exits.
+
+CTest also launches each committed Zork story through a pseudo-terminal,
+checks its title and release/serial banner, and verifies that Jzip exits
+normally. These smoke tests run under both ordinary and sanitizer builds.
