@@ -212,7 +212,7 @@ void open_story( const char *storyname )
    }                            
    else                         
    {                            
-      sprintf( tmp, "%s.exe", storyname ); 
+      snprintf( tmp, sizeof tmp, "%s.exe", storyname );
       if ( ( gfp = jz_open( tmp, "rb" ) ) != NULL )
       {                         
 #if defined BUFFER_FILES        
@@ -249,7 +249,7 @@ void open_story( const char *storyname )
 
    while ( p )
    {
-      sprintf( tmp, "%s/%s", p, storyname );
+      snprintf( tmp, sizeof tmp, "%s/%s", p, storyname );
       if ( ( gfp = jz_open( tmp, "rb" ) ) != NULL )
       {
 #if defined BUFFER_FILES        
@@ -263,7 +263,7 @@ void open_story( const char *storyname )
       }                         
       else                      
       {                         
-         sprintf( tmp, "%s/%s.exe", p, storyname ); 
+         snprintf( tmp, sizeof tmp, "%s/%s.exe", p, storyname );
          if ( ( gfp = jz_open( tmp, "rb" ) ) != NULL )
          {                      
 #if defined BUFFER_FILES        
@@ -392,7 +392,7 @@ void z_verify( void )
    unsigned int start, end, i, j;
    zword_t checksum = 0;
    zbyte_t buffer[PAGE_SIZE] = { 0 };
-   char szBuffer[6] = { 0 };
+   char szBuffer[8] = { 0 };
 
    /* Print version banner */
 
@@ -422,7 +422,8 @@ void z_verify( void )
          break;
    }
    write_string( "). Reporting Spec " );
-   sprintf( szBuffer, "%d.%d", get_byte( H_STANDARD_HIGH ), get_byte( H_STANDARD_LOW ) );
+   snprintf( szBuffer, sizeof szBuffer, "%d.%d", get_byte( H_STANDARD_HIGH ),
+             get_byte( H_STANDARD_LOW ) );
    write_string( szBuffer );
    write_string( " Compliance." );
    z_new_line(  );

@@ -343,7 +343,7 @@ void extract_zcode( char *filename )
    ext = strrchr( fn, '.' );
    if ( ext == 0 )
       ext = fn + strlen( fn );
-   sprintf( ext, ".z%d", z_version );
+   snprintf( ext, sizeof fn - ( ext - fn ), ".z%d", z_version );
 
    printf( "Extracting Z code to story file %s\n", fn );
    out = open_file( fn, FALSE );

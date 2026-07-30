@@ -599,7 +599,7 @@ void report_strictz_error( int errnum, const char *errstr )
 
    if ( strictz_report_mode == STRICTZ_REPORT_FATAL )
    {
-      sprintf( buf, "STRICTZ: %s (PC = %lx)", errstr, pc );
+      snprintf( buf, sizeof buf, "STRICTZ: %s (PC = %lx)", errstr, pc );
       fatal( buf );
       return;
    }
@@ -610,7 +610,7 @@ void report_strictz_error( int errnum, const char *errstr )
    if ( ( strictz_report_mode == STRICTZ_REPORT_ALWAYS ) ||
         ( strictz_report_mode == STRICTZ_REPORT_ONCE && wasfirst ) )
    {
-      sprintf( buf, "STRICTZ Warning: %s (PC = %lx)", errstr, pc );
+      snprintf( buf, sizeof buf, "STRICTZ Warning: %s (PC = %lx)", errstr, pc );
       write_string( buf );
 
       if ( strictz_report_mode == STRICTZ_REPORT_ONCE )
@@ -619,7 +619,7 @@ void report_strictz_error( int errnum, const char *errstr )
       }
       else
       {
-         sprintf( buf, " (occurrence %d)", strictz_error_count[errnum] );
+         snprintf( buf, sizeof buf, " (occurrence %d)", strictz_error_count[errnum] );
          write_string( buf );
       }
       z_new_line(  );

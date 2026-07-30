@@ -944,7 +944,7 @@ void z_print_num( zword_t num )
    char buffer[10];
 
    i = ( ZINT16 ) num;
-   sprintf( buffer, "%d", i );
+   snprintf( buffer, sizeof buffer, "%d", i );
    count = strlen( buffer );
    for ( i = 0; i < count; i++ )
       write_char( buffer[i] );
