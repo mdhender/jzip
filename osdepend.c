@@ -33,7 +33,6 @@
  */
 
 #include "ztypes.h"
-#include "jzexe.h"
 
 #ifdef HAVE_GETOPT
 #include <unistd.h>
@@ -121,7 +120,6 @@ void process_arguments( int argc, char *argv[] )
    int c, errflg = 0;
    int infoflag = 0;
    int size;
-   int expected_args;
    int num;
 
 #ifdef STRICTZ
@@ -196,10 +194,6 @@ void process_arguments( int argc, char *argv[] )
 
             fprintf( stdout, "\nJZIP - An Infocom Z-code Interpreter Program \n" );
             fprintf( stdout, "       %s %s\n", JZIPVER, JZIPRELDATE );
-            if ( STANDALONE_FLAG )
-            {
-               fprintf( stdout, "       Standalone game: %s\n", argv[0] );
-            }
             fprintf( stdout, "---------------------------------------------------------\n" );
             fprintf( stdout, "Author          :  %s\n", JZIPAUTHOR );
             fprintf( stdout, "Official Webpage: %s\n", JZIPURL );
@@ -271,20 +265,11 @@ void process_arguments( int argc, char *argv[] )
    if ( infoflag )
       exit( EXIT_SUCCESS );
 
-   if ( STANDALONE_FLAG )
-      expected_args = 0;
-   else
-      expected_args = 1;
-
    /* Display usage */
 
-   if ( errflg || optind + expected_args != argc )
+   if ( errflg || optind + 1 != argc )
    {
-
-      if ( STANDALONE_FLAG )
-         fprintf( stdout, "usage: %s [options...]\n", argv[0] ); 
-      else
-         fprintf( stdout, "usage: %s [options...] story-file\n", argv[0] ); 
+      fprintf( stdout, "usage: %s [options...] story-file\n", argv[0] );
 
       fprintf( stdout, "JZIP - an Infocom story file interpreter.\n" );
       fprintf( stdout, "      Version %s by %s.\n", JZIPVER, JZIPAUTHOR );
@@ -327,19 +312,7 @@ void process_arguments( int argc, char *argv[] )
 
    /* Open the story file */
 
-   if ( !STANDALONE_FLAG )      /* mol 951115 */
-      open_story( argv[optind] );
-   else
-   {
-      /* standalone, ie. the .exe file _is_ the story file. */
-      if ( argv[0][0] == 0 )
-      {
-         /* some OS's (ie DOS prior to v.3.0) don't supply the path to */
-         /* the .exe file in argv[0]; in that case, we give up. (mol) */
-         fatal( "process_arguments(): Sorry, this program will not run on this platform." );
-      }
-      open_story( argv[0] );
-   }
+   open_story( argv[optind] );
 
 }                               /* process_arguments */
 

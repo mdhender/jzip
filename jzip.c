@@ -41,7 +41,6 @@
  */
 
 #include "ztypes.h"
-#include "jzexe.h"
 
 extern int GLOBALVER;
 
@@ -90,28 +89,12 @@ int main( int argc, char *argv[] )
 
 static void configure( zbyte_t min_version, zbyte_t max_version )
 {
-   zbyte_t header[PAGE_SIZE], second;
+   zbyte_t header[PAGE_SIZE];
 
    read_page( 0, header );
    datap = header;
 
    h_type = get_byte( H_TYPE );
-
-   if ( h_type == 'M' || h_type == 'Z' )
-   {
-      /* possibly a DOS executable file, look more closely. (mol951115) */
-      second = get_byte( H_TYPE + 1 );
-      if ( ( h_type == 'M' && second == 'Z' ) || ( h_type == 'Z' && second == 'M' ) )
-         if ( analyze_exefile(  ) )
-         {
-            /* Bingo!  File is a standalone game file.  */
-            /* analyze_exefile has updated story_offset, so now we can */
-            /* read the _real_ first page, and continue as if nothing  */
-            /* has happened. */
-            read_page( 0, header );
-            h_type = get_byte( H_TYPE );
-         }
-   }
 
    GLOBALVER = h_type;
 

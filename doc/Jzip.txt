@@ -36,8 +36,7 @@
                     3.5 Compressed Game Files
                     
                 4.0 Utilities for Jzip
-                    4.1 Jzexe - make DOS native .exe game files
-		    4.2 ckifzs - check a Quetzal save file's validity
+		    4.1 ckifzs - check a Quetzal save file's validity
 
                 5.0 Building Jzip
                     5.1 UNIX/BeOS
@@ -93,11 +92,6 @@
             version 8.  These files are not compressed, but are ordinary 
             binary files, and should be downloaded by FTP in 'binary' 
             mode. 
-
-            Jzip can also be combined with a gamefile to make a 
-            standalone DOS executable (that with still be playable by
-            Jzip on OTHER platforms!).  If you want to learn how to
-            do this, see section 4.1.
 
         2.3 What platforms does Jzip run on?
 
@@ -270,11 +264,7 @@
 
         4.0 Utilities for Jzip
 
-        4.1 JZexe - making stand-alone Infocom-format games for MS-DOS
-
-            JZexe by Magnus Olsson (mol@df.lth.se) - see JZexe.txt
-
-        4.2 ckifzs - This executable checks the validity of Quetzal
+        4.1 ckifzs - This executable checks the validity of Quetzal
             save files, and is included with the permission of Martin
             Frost.
 
@@ -359,4 +349,3 @@
         8.0 License Agreement / Disclaimer
 
           See License.txt, or run jzip -z
-

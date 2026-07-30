@@ -32,7 +32,6 @@
  */
 
 #include "ztypes.h"
-#include "jzexe.h"              /* mol 951115 */
 
 /* Static data */
 
@@ -65,69 +64,7 @@ static zword_t undo_stack[STACK_SIZE];
 
 static int script_file_valid = FALSE;
 
-static long story_offset = 0;   /* mol 951114 */
-char *magic = ( char * ) MAGIC_STRING; /* mol */
-
 static int save_restore( const char *, int );
-
-/*
- * analyze_exefile
- *
- * This function is called if the game file seems to be a JZEXE file
- * (standalone game file). If that is the case, story_offset is set
- * to the beginning of the Z code and the function returns TRUE,
- * otherwise no action is taken and it returns FALSE.
- *
- * Magnus Olsson, November 1995
- */
-int analyze_exefile( void )
-{
-   int c, i;
-
-   if ( story_offset > 0 )
-   {
-      /* This is wrong; we shouldn't be doing this. */
-      return FALSE;
-   }
-
-   /* Look for the magic string, starting from the beginning. */
-   jz_rewind( gfp );
-   i = 0;
-
-   while ( ( c = jz_getc( gfp ) ) > -1 )
-   {
-      if ( c != magic[i] )
-      {
-         if ( c == magic[0] )
-         {
-            i = 1;              /* Next character should match magic[1] */
-         }
-         else
-         {
-            i = 0;
-         }
-      }
-      else if ( ++i == MAGIC_END )
-      {
-         /* Found the magic string! The next byte must be zero. */
-         if ( jz_getc( gfp ) != 0 )
-         {
-            return FALSE;
-         }
-
-         /* Read offset and return. We won't concern ourselves with possible
-          * read errors, since their consequences will be detected later on, 
-          * when we try to interpret the file as Z code. */
-         story_offset = jz_getc( gfp );
-         story_offset += 256L * jz_getc( gfp );
-         story_offset += 65536L * jz_getc( gfp );
-         return TRUE;
-      }
-   }
-   /* If we get here, we've reached the end of the infile without success. */
-   return FALSE;
-
-}                               /* analyze_exefile */
 
 
 /*
@@ -186,18 +123,6 @@ void open_story( const char *storyname )
    char *path, *p;
    char tmp[Z_FILENAME_MAX + Z_PATHNAME_MAX + 1];
 
-   if ( !STANDALONE_FLAG )
-   {
-      story_offset = 0;
-   }
-   else
-   {
-      /* standalone game; offset to story start is saved in low-endian */
-      /* format after magic string */
-      story_offset =
-            magic[MAGIC_END + 1] + magic[MAGIC_END + 2] * 256L + magic[MAGIC_END + 3] * 65536L;
-   }
-
    strcpy( tmp, storyname );    
    if ( ( gfp = jz_open( tmp, "rb" ) ) != NULL )
    {                            
@@ -208,30 +133,9 @@ void open_story( const char *storyname )
 #endif 
       set_names( storyname );   
       return;                   
-#if defined MSDOS || defined OS2 
-   }                            
-   else                         
-   {                            
-      snprintf( tmp, sizeof tmp, "%s.exe", storyname );
-      if ( ( gfp = jz_open( tmp, "rb" ) ) != NULL )
-      {                         
-#if defined BUFFER_FILES        
-#ifndef USE_ZLIB
-         setbuf( gfp, gfpbuffer ); 
-#endif
-#endif 
-         set_names( storyname ); 
-         return;                
-      }                         
-#endif 
    }                            
 
-   if ( !STANDALONE_FLAG && ( path = getenv( "INFOCOM_PATH" ) ) == NULL )
-   {
-      fprintf( stderr, "%s ", tmp );
-      fatal( "open_story(): Zcode file not found" );
-   }
-   else if ( STANDALONE_FLAG && ( path = getenv( "PATH" ) ) == NULL )
+   if ( ( path = getenv( "INFOCOM_PATH" ) ) == NULL )
    {
       fprintf( stderr, "%s ", tmp );
       fatal( "open_story(): Zcode file not found" );
@@ -259,22 +163,6 @@ void open_story( const char *storyname )
 #endif 
          set_names( storyname );
          return;
-#if defined MSDOS || defined OS2 
-      }                         
-      else                      
-      {                         
-         snprintf( tmp, sizeof tmp, "%s/%s.exe", p, storyname );
-         if ( ( gfp = jz_open( tmp, "rb" ) ) != NULL )
-         {                      
-#if defined BUFFER_FILES        
-#ifndef USE_ZLIB
-            setbuf( gfp, gfpbuffer ); 
-#endif
-#endif 
-            set_names( storyname ); 
-            return;             
-         }                      
-#endif 
       }
 #if defined MSDOS || defined OS2 
       p = strtok( NULL, ";" );
@@ -344,7 +232,7 @@ void read_page( int page, void *buffer )
    unsigned int pages, offset;
 
    /* Seek to start of page */
-   jz_seek( gfp, story_offset + ( long ) page * PAGE_SIZE, SEEK_SET );
+   jz_seek( gfp, ( long ) page * PAGE_SIZE, SEEK_SET );
 
    /* Read the page */
 
@@ -363,7 +251,7 @@ void read_page( int page, void *buffer )
       if ( ( unsigned int ) page == pages )
       {
          /* Read partial page if this is the last page in the game file */
-         jz_seek( gfp, story_offset + ( long ) page * PAGE_SIZE, SEEK_SET );
+         jz_seek( gfp, ( long ) page * PAGE_SIZE, SEEK_SET );
 #ifdef USE_ZLIB
          if ( gzread( gfp, buffer, offset ) == -1 )
 #else

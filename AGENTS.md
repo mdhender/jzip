@@ -38,7 +38,7 @@ cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
 cmake --build cmake-build-debug
 ```
 
-The supported products are `jzip` and `ckifzs`. `jzexe` creates historical self-contained DOS/Linux executables and is not part of the macOS port unless a concrete test requires it. The macOS SDK supplies the current link dependencies, zlib and termcap (`-lz -ltermcap`).
+The supported products are `jzip` and `ckifzs`. The macOS SDK supplies the current link dependencies, zlib and termcap (`-lz -ltermcap`).
 
 Run the interoperability test with:
 
