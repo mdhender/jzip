@@ -51,6 +51,7 @@
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
 #endif
+#define EXIT_USAGE 2
 
 typedef short ZINT16;
 typedef unsigned short ZUINT16;
@@ -177,7 +178,7 @@ int main( int argc, char **argv )
       if ( ( fp = fopen( argv[1], "rb" ) ) == NULL )
       {
          perror( argv[1] );
-         exit( EXIT_FAILURE );
+         exit( EXIT_USAGE );
       }
       setbuf( fp, buffer );     
    }
@@ -189,7 +190,7 @@ int main( int argc, char **argv )
                "This does not do in-depth checking, but makes sure all chunk lengths are\n" );
       fprintf( stderr,
                "correct, and ensures all necessary chunks appear and in the correct order.\n" );
-      exit( EXIT_FAILURE );
+      exit( EXIT_USAGE );
    }
 
    /* print details of FORM header */

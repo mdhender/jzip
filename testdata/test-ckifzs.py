@@ -82,6 +82,22 @@ def main() -> int:
         duplicate_memory = fixture(IFHD, DUMMY_FRAME, chunk(b"UMem", b""))
         check(ckifzs, directory, "duplicate-memory.qzl", duplicate_memory, 0, "warning: later memory")
 
+        missing = subprocess.run(
+            [ckifzs, str(directory / "does-not-exist.qzl")], capture_output=True, text=True, check=False
+        )
+        if missing.returncode != 2 or "does-not-exist.qzl" not in missing.stderr:
+            raise AssertionError(
+                f"unreadable file: expected status 2 and path on stderr\n"
+                f"status: {missing.returncode}\nstdout:\n{missing.stdout}\nstderr:\n{missing.stderr}"
+            )
+
+        usage = subprocess.run([ckifzs], capture_output=True, text=True, check=False)
+        if usage.returncode != 2 or "usage:" not in usage.stderr:
+            raise AssertionError(
+                f"usage: expected status 2 and usage on stderr\n"
+                f"status: {usage.returncode}\nstdout:\n{usage.stdout}\nstderr:\n{usage.stderr}"
+            )
+
     print("ckifzs conformance regression test passed.")
     return 0
 
