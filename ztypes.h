@@ -475,6 +475,7 @@ extern int story_scaler;
 extern int story_shift;
 extern int property_mask;
 extern int property_size_mask;
+extern int quetzal_use_umem;
 
 extern zword_t stack[STACK_SIZE];
 extern zword_t sp;

@@ -72,6 +72,7 @@ int story_scaler = 0;
 int story_shift = 0;
 int property_mask = 0;
 int property_size_mask = 0;
+int quetzal_use_umem = FALSE;
 
 /* Stack and PC data */
 

@@ -83,13 +83,13 @@ int save_quetzal( FILE * sfp, gzFile gfp )
 int save_quetzal( FILE * sfp, FILE * gfp )
 #endif
 {
-   quetzal_u32_t ifzslen = 0, cmemlen = 0, stkslen = 0;
+   quetzal_u32_t ifzslen = 0, memlen = 0, stkslen = 0;
    unsigned long tmp_pc;
    int c;
    zword_t i, j, n, init_fp, tmp_fp, nstk, nvars, args;
    zword_t frames[STACK_SIZE / 4 + 1];
    zbyte_t var;
-   long cmempos, stkspos;
+   long mempos, stkspos;
 
    /* write IFZS header */
    if ( !write_chnk( sfp, ID_FORM, 0 ) )
@@ -110,44 +110,53 @@ int save_quetzal( FILE * sfp, FILE * gfp )
    if ( !write_long( sfp, ( ( quetzal_u32_t ) pc ) << 8 ) ) /* includes pad byte */
       return FALSE;             
 
-   /* write CMem chunk */
-   /* j is current run length */
-   if ( ( cmempos = ftell( sfp ) ) < 0 )
+   /* write CMem or UMem chunk */
+   if ( ( mempos = ftell( sfp ) ) < 0 )
       return FALSE;
-   if ( !write_chnk( sfp, ID_CMem, 0 ) )
+   if ( !write_chnk( sfp, quetzal_use_umem ? ID_UMem : ID_CMem, 0 ) )
       return FALSE;
-   jz_rewind( gfp );
-   for ( i = 0, j = 0, cmemlen = 0; i < h_restart_size; ++i )
+   if ( quetzal_use_umem )
    {
-      if ( ( c = jz_getc( gfp ) ) == EOF )
+      memlen = h_restart_size;
+      if ( fwrite( datap, 1, memlen, sfp ) != memlen )
          return FALSE;
-      c ^= get_byte( i );
-      if ( c == 0 )
-         ++j;
-      else
-      {
-         /* write any run there may be */
-         if ( j > 0 )
-         {
-            for ( ; j > 0x100; j -= 0x100 )
-            {
-               if ( !write_run( sfp, 0xFF ) )
-                  return FALSE;
-               cmemlen += 2;
-            }
-            if ( !write_run( sfp, j - 1 ) )
-               return FALSE;
-            cmemlen += 2;
-            j = 0;
-         }
-         /* write this byte */
-         if ( !write_byte( sfp, c ) )
-            return FALSE;
-         ++cmemlen;
-      }
    }
-   /* there may be a run here, which we ignore */
-   if ( cmemlen & 1 )           /* chunk length must be even */
+   else
+   {
+      /* j is current run length */
+      jz_rewind( gfp );
+      for ( i = 0, j = 0, memlen = 0; i < h_restart_size; ++i )
+      {
+         if ( ( c = jz_getc( gfp ) ) == EOF )
+            return FALSE;
+         c ^= get_byte( i );
+         if ( c == 0 )
+            ++j;
+         else
+         {
+            /* write any run there may be */
+            if ( j > 0 )
+            {
+               for ( ; j > 0x100; j -= 0x100 )
+               {
+                  if ( !write_run( sfp, 0xFF ) )
+                     return FALSE;
+                  memlen += 2;
+               }
+               if ( !write_run( sfp, j - 1 ) )
+                  return FALSE;
+               memlen += 2;
+               j = 0;
+            }
+            /* write this byte */
+            if ( !write_byte( sfp, c ) )
+               return FALSE;
+            ++memlen;
+         }
+      }
+      /* there may be a run here, which we ignore */
+   }
+   if ( memlen & 1 )            /* chunk length must be even */
       if ( !write_byte( sfp, 0 ) )
          return FALSE;
 
@@ -224,14 +233,14 @@ int save_quetzal( FILE * sfp, FILE * gfp )
    }
 
    /* fill in lengths for variable-sized chunks */
-   ifzslen = 3 * 8 + 4 + 14 + cmemlen + stkslen;
-   if ( cmemlen & 1 )
+   ifzslen = 3 * 8 + 4 + 14 + memlen + stkslen;
+   if ( memlen & 1 )
       ++ifzslen;
    ( void ) fseek( sfp, ( long ) 4, SEEK_SET );
    if ( !write_long( sfp, ifzslen ) )
       return FALSE;
-   ( void ) fseek( sfp, cmempos + 4, SEEK_SET );
-   if ( !write_long( sfp, cmemlen ) )
+   ( void ) fseek( sfp, mempos + 4, SEEK_SET );
+   if ( !write_long( sfp, memlen ) )
       return FALSE;
    ( void ) fseek( sfp, stkspos + 4, SEEK_SET );
    if ( !write_long( sfp, stkslen ) )

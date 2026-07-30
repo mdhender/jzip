@@ -62,8 +62,10 @@ ctest --test-dir cmake-build-debug --output-on-failure
 The test uses the Zork I transcript documented in `frotz/README.md`. It pipes
 commands to Jzip, compares the resulting Kitchen state with Frotz, validates
 both interpreters' saves with `ckifzs`, and restores each interpreter's save
-with the other interpreter. Generated files are kept in a temporary directory
-and removed when the test exits.
+with the other interpreter. It verifies Jzip's default `CMem` output and its
+optional `-u` `UMem` output, including restoring the UMem save with both Jzip
+and Frotz. Generated files are kept in a temporary directory and removed when
+the test exits.
 
 CTest also pipes a quit transcript into each committed Zork story, checks its
 title and release/serial banner, and verifies that Jzip exits normally. These

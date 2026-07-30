@@ -141,23 +141,23 @@ void process_arguments( int argc, char *argv[] )
 
 #ifdef STRICTZ                  
 #if defined OS2 || defined __MSDOS__ 
-#define GETOPT_SET "gbomvzhy?l:c:k:r:t:s:" 
+#define GETOPT_SET "gbuomvzhy?l:c:k:r:t:s:"
 #elif defined TURBOC            
-#define GETOPT_SET   "bmvzhy?l:c:k:r:t:s:" 
+#define GETOPT_SET   "bumvzhy?l:c:k:r:t:s:"
 #elif defined HARD_COLORS       
-#define GETOPT_SET    "mvzhy?l:c:k:r:t:s:f:b:" 
+#define GETOPT_SET    "muvzhy?l:c:k:r:t:s:f:b:"
 #else 
-#define GETOPT_SET    "mvzhy?l:c:k:r:t:s:" 
+#define GETOPT_SET    "muvzhy?l:c:k:r:t:s:"
 #endif 
 #else 
 #if defined OS2 || defined __MSDOS__ 
-#define GETOPT_SET "gbomvzhy?l:c:k:r:t:" 
+#define GETOPT_SET "gbuomvzhy?l:c:k:r:t:"
 #elif defined TURBOC            
-#define GETOPT_SET   "bmvzhy?l:c:k:r:t:" 
+#define GETOPT_SET   "bumvzhy?l:c:k:r:t:"
 #elif defined HARD_COLORS       
-#define GETOPT_SET    "mvzhy?l:c:k:r:t:f:b:" 
+#define GETOPT_SET    "muvzhy?l:c:k:r:t:f:b:"
 #else 
-#define GETOPT_SET    "mvzhy?l:c:k:r:t:" 
+#define GETOPT_SET    "muvzhy?l:c:k:r:t:"
 #endif 
 #endif 
    while ( ( c = getopt( argc, argv, GETOPT_SET ) ) != EOF )
@@ -185,6 +185,9 @@ void process_arguments( int argc, char *argv[] )
          case 'y':             /* Tandy */
             fTandy = 1;         
             break;              
+         case 'u':             /* uncompressed Quetzal memory */
+            quetzal_use_umem = TRUE;
+            break;
 #if defined OS2 || defined __MSDOS__ 
          case 'g':             /* Beyond Zork or other games using IBM graphics */
             fIBMGraphics = 1;   
@@ -283,6 +286,7 @@ void process_arguments( int argc, char *argv[] )
       fprintf( stdout, "\t-k n set the size of the command history buffer to n bytes\n" );
       fprintf( stdout, "\t     (Default is 1024 bytes.  Maximum is 16384 bytes.)\n" );
       fprintf( stdout, "\t-y   turn on the legendary \"Tandy\" bit\n" ); 
+      fprintf( stdout, "\t-u   write uncompressed UMem chunks in Quetzal saves\n" );
       fprintf( stdout, "\t-v   display version information\n" );
       fprintf( stdout, "\t-h   display this usage information\n" );
 
