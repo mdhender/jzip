@@ -76,7 +76,8 @@ Diagnostics for malformed structures begin with `***`. Non-fatal diagnostics inc
 | Status | Meaning |
 | --- | --- |
 | `0` | The required chunks are present and no structural errors were reported. |
-| `1` | Usage was invalid, the file could not be opened, the file was malformed, a required chunk was absent, or another reported error occurred. |
+| `1` | The file was opened but is malformed, lacks a required chunk, or contains another conformance error. |
+| `2` | Usage was invalid or the file could not be opened. |
 
 ## Examples
 
