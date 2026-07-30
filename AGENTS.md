@@ -18,15 +18,14 @@ Keep the initial port conservative: preserve interpreter behavior and file-forma
 ## Relevant Code
 
 - `CMakeLists.txt`: supported native macOS and CLion build, including the interoperability test and optional sanitizers.
-- `unixio.mak`: legacy Unix build retained only until the macOS build and required source set are established.
-- `unixio.c`: terminal/termcap implementation used by the Unix build.
+- `unixio.c`: terminal/termcap implementation used by the macOS build.
 - `ztypes.h`: shared configuration, VM types, constants, globals, and function declarations. `USE_QUETZAL` is enabled here.
 - `fileio.c`: story-file access plus save/restore dispatch. With `USE_ZLIB`, modern zlib defines `gzFile` as an opaque pointer typedef; the legacy `gzFile *` declarations are therefore one pointer level too deep.
 - `quetzal.c`: Quetzal IFZS serialization and restoration. Audit its `unsigned long` format values carefully on LP64.
 - `ckifzs.c`: standalone Quetzal structure checker and a useful independent validation tool.
 - `doc/ckifzs.md`: command reference for the checker.
 - `jzip.c`, `interpre.c`, and the opcode modules: interpreter startup and VM execution.
-- `doc/Building.txt`, `doc/Jzip.txt`, and `doc/jzip.6`: original build and command-line documentation. Treat these as historical references; verify details against current code.
+- `doc/Jzip.txt` and `doc/jzip.6`: original command-line documentation. Treat these as historical references; verify details against current code.
 
 Jzip supports Z-code versions 1-5 and 8. Do not imply support for versions 6 or 7 without implementing and testing it.
 
