@@ -8,6 +8,7 @@ testdata/
 ├── frotz/     save files made by Frotz
 ├── scripts/   reusable command transcripts
 ├── test-interop.sh
+├── test-ckifzs.py
 ├── test-scripted-interface.sh
 ├── test-story-smoke.sh
 └── README.md
@@ -74,3 +75,8 @@ smoke tests run under both ordinary and sanitizer builds.
 The scripted-interface test additionally requires clean termination at EOF,
 an empty diagnostic stream, no status-line text, no pagination, no ANSI escape
 sequences, and correct room/score progression with `TERM` unset.
+
+The `ckifzs` conformance regression test generates temporary IFZS files for
+extension chunks, interpreter-dependent data, trailing bytes, short headers,
+and malformed or complete stack frames. It checks both acceptance and rejection
+without committing generated malformed files.

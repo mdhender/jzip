@@ -82,6 +82,8 @@ set(DFROTZ_EXECUTABLE "/opt/homebrew/bin/dfrotz" CACHE FILEPATH
 )
 
 if(BUILD_TESTING)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
     function(add_story_smoke_test name story title release)
         add_test(
             NAME ${name}
@@ -131,5 +133,12 @@ if(BUILD_TESTING)
             "ASAN_OPTIONS=halt_on_error=1"
             "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1"
             /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/testdata/test-interop.sh
+    )
+
+    add_test(
+        NAME ckifzs_conformance
+        COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/testdata/test-ckifzs.py
+            $<TARGET_FILE:ckifzs>
     )
 endif()

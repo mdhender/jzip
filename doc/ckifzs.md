@@ -12,11 +12,11 @@ ckifzs FILE
 
 ## Description
 
-`ckifzs` reads one Quetzal save file and reports its IFF `FORM IFZS` structure. It checks container and chunk lengths, required chunks, selected chunk ordering rules, and duplicate known chunks.
+`ckifzs` reads one Quetzal save file and reports its IFF `FORM IFZS` structure. It checks container and chunk lengths, required chunks, selected chunk ordering rules, and stack-frame boundaries.
 
 The command prints the identifier and size of each chunk. For an `IFhd` chunk, it also prints the story release number, six-character serial number, checksum, and saved program counter.
 
-`ckifzs` is a structural checker. It does not restore the game, compare the save with a story file, or fully validate the contents of compressed memory and stack frames.
+`ckifzs` is a structural checker. It does not restore the game, compare the save with a story file, decompress `CMem`, or validate saved program counters and stack values against a story.
 
 ## Arguments
 
@@ -34,14 +34,15 @@ The command does not implement options, including `--help` or `--version`. A fil
 - the declared `FORM` length is legal and contains complete chunk headers;
 - chunk identifiers contain printable ASCII characters;
 - each chunk fits within the declared `FORM` length, including odd-length padding;
-- no data follows the declared `FORM` contents;
-- an `IFhd` header chunk is present;
-- a `Stks` stack chunk is present;
+- data following the declared `FORM` contents is reported as a warning;
+- an `IFhd` header chunk of at least 13 bytes is present;
+- a `Stks` stack chunk is present and consists of complete frames when nonempty;
+- each stack frame contains the local variables and evaluation words declared by its header;
 - at least one `CMem` or `UMem` memory chunk is present;
 - `IFhd` precedes memory and stack chunks;
-- known singleton chunks are not duplicated.
+- later duplicates of singleton chunks are reported as warnings.
 
-Unknown chunk identifiers are reported as errors by this implementation.
+Unknown chunk identifiers are listed and skipped as required by the Quetzal standard.
 
 ## Recognized chunks
 
@@ -68,7 +69,7 @@ A successful check ends with:
 Save file is valid.
 ```
 
-Diagnostics for malformed or unsupported structures begin with `***`. Some duplicate-chunk diagnostics include the word `warning`, but still cause a failure exit status.
+Diagnostics for malformed structures begin with `***`. Non-fatal diagnostics include the word `warning`; unknown chunks are identified as skipped. Warnings do not change the exit status.
 
 ## Exit status
 
