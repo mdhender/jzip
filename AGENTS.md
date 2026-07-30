@@ -18,7 +18,7 @@ Keep the initial port conservative: preserve interpreter behavior and file-forma
 ## Relevant Code
 
 - `CMakeLists.txt`: supported native macOS and CLion build, including the interoperability test and optional sanitizers.
-- `unixio.c`: terminal/termcap implementation used by the macOS build.
+- `unixio.c`: plain stdin/stdout implementation used by the macOS build.
 - `ztypes.h`: shared configuration, VM types, constants, globals, and function declarations. `USE_QUETZAL` is enabled here.
 - `fileio.c`: story-file access plus save/restore dispatch. With `USE_ZLIB`, modern zlib defines `gzFile` as an opaque pointer typedef; the legacy `gzFile *` declarations are therefore one pointer level too deep.
 - `quetzal.c`: Quetzal IFZS serialization and restoration. Audit its `unsigned long` format values carefully on LP64.
@@ -38,7 +38,7 @@ cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
 cmake --build cmake-build-debug
 ```
 
-The supported products are `jzip` and `ckifzs`. The macOS SDK supplies the current link dependencies, zlib and termcap (`-lz -ltermcap`).
+The supported products are `jzip` and `ckifzs`. Jzip is a non-interactive-friendly command-line tool: it reads commands from standard input and writes plain text to standard output without terminal control sequences or pagination. The macOS SDK supplies zlib, the only link dependency.
 
 Run the interoperability test with:
 
@@ -93,6 +93,6 @@ Scale verification with each change, but a porting change is not complete merely
 5. Test the same story/save pair with command-line Frotz at `/opt/homebrew/bin/dfrotz` and compare observable restored state and subsequent commands. Record the exact Jzip and Frotz invocations and versions in test notes.
 6. When save support changes, test both directions when possible: Jzip must read a Frotz-created Quetzal file, and Frotz plus `ckifzs` must read a Jzip-created file.
 
-Jzip uses terminal control and interactive input, so tests that exercise gameplay should run in a real terminal or a PTY rather than assuming ordinary stdin/stdout redirection faithfully represents behavior. Keep external story files and Quetzal fixtures outside version control unless they are explicitly known to be redistributable. The committed Zork fixtures are separately distributed under the MIT licenses adjacent to the story files.
+Gameplay tests should pipe newline-delimited commands to Jzip and assert against its plain standard output. Keep external story files and Quetzal fixtures outside version control unless they are explicitly known to be redistributable. The committed Zork fixtures are separately distributed under the MIT licenses adjacent to the story files.
 
 If a required fixture, matching story file, or Frotz executable is unavailable, complete the build and smoke checks that are possible and state exactly which compatibility checks remain unverified.

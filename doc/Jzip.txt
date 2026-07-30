@@ -286,17 +286,8 @@
             on SunOS, Solaris, HPUX, AIX, NeXT MACH, DEC OSF, Irix, 
             BeOS and Linux.
         
-            Now type `make`.  If the compile doesn't happen right, edit 
-            the Makefile and change the "-DPOSIX" to either "-DSYSTEM_FIVE" 
-            or "-DBSD".  Ask your system administrator if you are not sure
-            which flavour of UNIX you are running.  If you still are 
-            getting errors, try changing "-ltermcap" to "-lcurses" on 
-            the LIBS line of the Makefile.  If it still doesn't work, 
-            get help from a friend or email me.
-
-            If your terminal can understand ANSI escape sequences, 
-            (a la the Linux console), you may wish to add "-DHARD_COLORS" 
-            to the CFLAGS line.
+            These instructions describe historical builds and do not apply
+            to the current CMake-based macOS fork.
         
         5.2 DOS (& windows, I suppose...)
         

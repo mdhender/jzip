@@ -8,7 +8,6 @@ set(CMAKE_C_EXTENSIONS ON)
 option(ENABLE_SANITIZERS "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 
 find_package(ZLIB REQUIRED)
-find_library(TERMCAP_LIBRARY NAMES termcap REQUIRED)
 
 add_executable(jzip
     jzip.c
@@ -34,14 +33,10 @@ add_executable(jzip
 target_compile_definitions(jzip PRIVATE
     POSIX
     HAVE_GETOPT
-    HARD_COLORS
     USE_ZLIB
 )
 
-target_link_libraries(jzip PRIVATE
-    ZLIB::ZLIB
-    ${TERMCAP_LIBRARY}
-)
+target_link_libraries(jzip PRIVATE ZLIB::ZLIB)
 
 add_executable(ckifzs ckifzs.c)
 

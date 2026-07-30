@@ -26,11 +26,6 @@ if [ ! -x "$ckifzs" ]; then
     exit 1
 fi
 
-if ! command -v expect >/dev/null 2>&1; then
-    echo "expect is required to drive Jzip through a pseudo-terminal" >&2
-    exit 1
-fi
-
 require_text()
 {
     file=$1
@@ -41,63 +36,21 @@ require_text()
     fi
 }
 
-# Drive Jzip through a PTY because its terminal interface reads keystrokes and
-# emits cursor-control sequences rather than behaving as a line filter.
-JZIP=$jzip STORY=$story TMP=$tmp expect <<'EOF'
-set timeout 15
-log_user 0
-expect_before timeout { exit 1 }
-cd "$env(TMP)"
-spawn env TERM=xterm "$env(JZIP)" "$env(STORY)"
-expect ">"
-send "north\r"
-expect ">"
-send "east\r"
-expect ">"
-send "open window\r"
-expect ">"
-send "enter\r"
-expect "Kitchen"
-expect ">"
-send "save\r"
-expect "Enter a file name."
-expect ": "
-send "jzip.qzl\r"
-expect "Ok."
-expect ">"
-send "quit\r"
-expect "Do you wish to leave the game?"
-send "y\r"
-expect "Hit any key to exit."
-send "x"
-expect eof
-EOF
+# Drive Jzip as a line-oriented stdin/stdout filter.
+(
+    cd "$tmp"
+    printf 'north\neast\nopen window\nenter\nsave\njzip.qzl\nquit\ny\n' |
+        "$jzip" "$story" >jzip-save.log
+)
+require_text "$tmp/jzip-save.log" "Kitchen"
+require_text "$tmp/jzip-save.log" "Ok."
 "$ckifzs" "$tmp/jzip.qzl" >"$tmp/ckifzs-jzip.log"
 
 # Restore the committed Frotz fixture in Jzip.
-JZIP=$jzip STORY=$story TMP=$tmp FIXTURE=$fixture expect <<'EOF'
-set timeout 15
-log_user 0
-expect_before timeout { exit 1 }
-cd "$env(TMP)"
-spawn env TERM=xterm "$env(JZIP)" "$env(STORY)"
-expect ">"
-send "restore\r"
-expect "Enter a file name."
-expect ": "
-send "$env(FIXTURE)\r"
-expect "Ok."
-expect ">"
-send "look\r"
-expect "You are in the kitchen of the white house."
-expect ">"
-send "quit\r"
-expect "Do you wish to leave the game?"
-send "y\r"
-expect "Hit any key to exit."
-send "x"
-expect eof
-EOF
+printf 'restore\n%s\nlook\nquit\ny\n' "$fixture" |
+    "$jzip" "$story" >"$tmp/jzip-restore-frotz.log"
+require_text "$tmp/jzip-restore-frotz.log" "Ok."
+require_text "$tmp/jzip-restore-frotz.log" "You are in the kitchen of the white house."
 
 # Establish the same movement transcript with Frotz and make a temporary save
 # independently of the committed fixture.

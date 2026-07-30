@@ -22,23 +22,14 @@ if [ ! -f "$story" ]; then
     exit 1
 fi
 
-if ! command -v expect >/dev/null 2>&1; then
-    echo "expect is required to drive Jzip through a pseudo-terminal" >&2
-    exit 1
-fi
+output=$(printf 'quit\ny\n' | "$jzip" "$story")
 
-JZIP=$jzip STORY=$story TITLE=$title RELEASE=$release expect <<'EOF'
-set timeout 15
-log_user 0
-expect_before timeout { exit 1 }
-spawn env TERM=xterm "$env(JZIP)" "$env(STORY)"
-expect "$env(TITLE)"
-expect "$env(RELEASE)"
-expect ">"
-send "quit\r"
-expect "Do you wish to leave the game?"
-send "y\r"
-expect "Hit any key to exit."
-send "x"
-expect eof
-EOF
+case $output in
+    *"$title"*) ;;
+    *) echo "Expected story title not found: $title" >&2; exit 1 ;;
+esac
+
+case $output in
+    *"$release"*) ;;
+    *) echo "Expected story release not found: $release" >&2; exit 1 ;;
+esac

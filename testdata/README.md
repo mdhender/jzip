@@ -51,12 +51,12 @@ cmake --build cmake-build-debug
 ctest --test-dir cmake-build-debug --output-on-failure
 ```
 
-The test uses the Zork I transcript documented in `frotz/README.md`. It drives
-Jzip through a pseudo-terminal, compares the resulting Kitchen state with
-Frotz, validates both interpreters' saves with `ckifzs`, and restores each
-interpreter's save with the other interpreter. Generated files are kept in a
-temporary directory and removed when the test exits.
+The test uses the Zork I transcript documented in `frotz/README.md`. It pipes
+commands to Jzip, compares the resulting Kitchen state with Frotz, validates
+both interpreters' saves with `ckifzs`, and restores each interpreter's save
+with the other interpreter. Generated files are kept in a temporary directory
+and removed when the test exits.
 
-CTest also launches each committed Zork story through a pseudo-terminal,
-checks its title and release/serial banner, and verifies that Jzip exits
-normally. These smoke tests run under both ordinary and sanitizer builds.
+CTest also pipes a quit transcript into each committed Zork story, checks its
+title and release/serial banner, and verifies that Jzip exits normally. These
+smoke tests run under both ordinary and sanitizer builds.

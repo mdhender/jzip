@@ -419,8 +419,6 @@ void output_char( int c )
 
 void output_new_line( void )
 {
-   int row, col;
-
    /* Don't print if output is disabled or replaying commands */
 
    if ( outputting == ON )
@@ -433,33 +431,7 @@ void output_new_line( void )
 
          scroll_line(  );
 
-         /* See if we have filled the screen. The spare line is for 
-          * the [MORE] message 
-          */
-
-         if ( ++lines_written >= ( ( screen_rows - top_margin ) - status_size - 1 ) )
-         {
-
-            /* Display the new status line while the screen in paused */
-
-            if ( h_type < V4 )
-               z_show_status(  );
-
-            /* Reset the line count and display the more message */
-
-            lines_written = 0;
-
-            if ( replaying == OFF )
-            {
-               get_cursor_position( &row, &col );
-               output_string( "[MORE]" );
-               ( void ) input_character( 0 );
-               move_cursor( row, col );
-               output_string( "      " );
-               move_cursor( row, col );
-               /* clear_line (); */
-            }
-         }
+         lines_written++;
       }
       else
          /* If this is the status window then just output a new line */
