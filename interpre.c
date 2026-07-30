@@ -37,6 +37,11 @@
 
 static int halt = FALSE;
 
+void stop_interpreter( void )
+{
+   halt = TRUE;
+}
+
 /*
  * interpret
  *

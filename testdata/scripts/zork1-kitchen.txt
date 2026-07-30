@@ -1,0 +1,6 @@
+north
+east
+open window
+enter
+quit
+y

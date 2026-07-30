@@ -126,7 +126,8 @@ void set_attribute( int attribute )
 
 void display_char( int c )
 {
-   putchar( c );
+   if ( screen_window == TEXT_WINDOW )
+      putchar( c );
 
    if ( c == '\n' )
    {
@@ -163,6 +164,7 @@ int input_line( int buflen, char *buffer, int timeout, int *read_size )
             if ( c != '\n' && c != EOF )
                ungetc( c, stdin );
          }
+         scroll_line(  );
          return '\n';
       }
 
@@ -170,7 +172,10 @@ int input_line( int buflen, char *buffer, int timeout, int *read_size )
          buffer[( *read_size )++] = ( char ) c;
    }
 
-   return ( *read_size > 0 ) ? '\n' : -1;
+   if ( *read_size == 0 )
+      stop_interpreter(  );
+   scroll_line(  );
+   return '\n';
 }
 
 int input_character( int timeout )
@@ -181,6 +186,11 @@ int input_character( int timeout )
    fflush( stdout );
    c = getchar(  );
 
+   if ( c == EOF )
+   {
+      stop_interpreter(  );
+      return 0;
+   }
    if ( c == '\n' )
       return '\r';
    return c;

@@ -95,6 +95,16 @@ if(BUILD_TESTING)
     )
 
     add_test(
+        NAME jzip_scripted_interface
+        COMMAND ${CMAKE_COMMAND} -E env
+            "JZIP=$<TARGET_FILE:jzip>"
+            "DFROTZ=${DFROTZ_EXECUTABLE}"
+            "ASAN_OPTIONS=halt_on_error=1"
+            "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1"
+            /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/testdata/test-scripted-interface.sh
+    )
+
+    add_test(
         NAME jzip_frotz_quetzal_interoperability
         COMMAND ${CMAKE_COMMAND} -E env
             "JZIP=$<TARGET_FILE:jzip>"

@@ -6,7 +6,9 @@ Files the tests read. Nothing here is part of the package.
 testdata/
 ├── stories/   Z-machine story files
 ├── frotz/     save files made by Frotz
+├── scripts/   reusable command transcripts
 ├── test-interop.sh
+├── test-scripted-interface.sh
 ├── test-story-smoke.sh
 └── README.md
 ```
@@ -41,6 +43,12 @@ Read it before you reuse a story file for anything.
 Saves written by Frotz, an established interpreter.
 They help assure us that this package works.
 
+## scripts/
+
+Plain newline-delimited commands suitable for standard-input redirection. The
+scripted-interface test runs the same Zork I Kitchen transcript through Jzip
+and Frotz and compares semantic checkpoints rather than terminal formatting.
+
 ## Interoperability test
 
 From the repository root, run:
@@ -60,3 +68,7 @@ and removed when the test exits.
 CTest also pipes a quit transcript into each committed Zork story, checks its
 title and release/serial banner, and verifies that Jzip exits normally. These
 smoke tests run under both ordinary and sanitizer builds.
+
+The scripted-interface test additionally requires clean termination at EOF,
+an empty diagnostic stream, no status-line text, no pagination, no ANSI escape
+sequences, and correct room/score progression with `TERM` unset.

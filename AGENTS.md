@@ -38,7 +38,7 @@ cmake -S . -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug
 cmake --build cmake-build-debug
 ```
 
-The supported products are `jzip` and `ckifzs`. Jzip is a non-interactive-friendly command-line tool: it reads commands from standard input and writes plain text to standard output without terminal control sequences or pagination. The macOS SDK supplies zlib, the only link dependency.
+The supported products are `jzip` and `ckifzs`. Jzip is a non-interactive-friendly command-line tool: it reads commands from standard input and writes plain text to standard output without terminal control sequences, status-window rendering, or pagination. End-of-file cleanly stops the interpreter. Diagnostics go to standard error. The macOS SDK supplies zlib, the only link dependency.
 
 Run the interoperability test with:
 

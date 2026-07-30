@@ -613,6 +613,7 @@ void z_tokenise( int, zword_t * );
 /* interpre.c */
 
 int interpret( void );
+void stop_interpreter( void );
 
 
 /* license.c */
