@@ -535,7 +535,7 @@ void write_zchar( int c )
  *
  *
  */
-zbyte_t translate_to_zscii(int c)
+static zbyte_t translate_to_zscii(int c)
 {
    int i;
 

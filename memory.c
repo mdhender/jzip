@@ -295,6 +295,7 @@ zbyte_t read_data_byte( unsigned long *addr )
       else
       {
          fatal( "read_data_byte(): Fetching data from invalid page!" );
+         return 0;
       }
    }
 

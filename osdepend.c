@@ -692,6 +692,8 @@ void set_font( int font_type )
 
 void set_colours( zword_t foreground, zword_t background )
 {
+   ( void ) foreground;
+   ( void ) background;
 
 }                               /* set_colours */
 

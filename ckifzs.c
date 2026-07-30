@@ -55,7 +55,7 @@
 typedef short ZINT16;
 typedef unsigned short ZUINT16;
 
-unsigned char read_byte( FILE * fp )
+static unsigned char read_byte( FILE * fp )
 {
    int c;
 
@@ -69,7 +69,7 @@ unsigned char read_byte( FILE * fp )
 
 #if defined SHORT_DUMP || defined LONG_DUMP 
 
-void coredump( uint32_t offset, unsigned char uch )
+static void coredump( uint32_t offset, unsigned char uch )
 {                               
    if ( !( offset % 16 ) )
       printf( "\n    %08" PRIX32 "  ", offset );
@@ -238,10 +238,10 @@ int main( int argc, char **argv )
       }
       else if ( !strncmp( id, "CMem", 4 ) )
       {
-         uint32_t ul1, ul2;
-
          printf( " (compressed memory)" ); 
 #if defined SHORT_DUMP          
+         uint32_t ul1;
+
          for ( ul1 = 0; ul1 < cklen; ++ul1 )
          {                      
             unsigned char uch = read_byte( fp ); 
@@ -251,6 +251,8 @@ int main( int argc, char **argv )
          filelen -= cklen;
          cklen = 0;             
 #elif defined LONG_DUMP         
+         uint32_t ul1, ul2;
+
          for ( ul1 = 0, ul2 = 0; ul1 < cklen; ++ul1 )
          {                      
             unsigned char uch = read_byte( fp ); 
@@ -479,7 +481,6 @@ int main( int argc, char **argv )
          if ( cklen >= 1 )      
          {                      
             uint32_t l;
-            unsigned char uch1; 
 
             fputs( "    ", stdout ); 
             for ( l = 0; l < cklen; ++l ) 
@@ -497,7 +498,6 @@ int main( int argc, char **argv )
          if ( cklen >= 1 )      
          {                      
             uint32_t l;
-            unsigned char uch1; 
 
             fputs( "    ", stdout ); 
             for ( l = 0; l < cklen; ++l ) 
@@ -515,7 +515,6 @@ int main( int argc, char **argv )
          if ( cklen >= 1 )      
          {                      
             uint32_t l;
-            unsigned char uch1; 
 
             fputs( "    ", stdout ); 
             for ( l = 0; l < cklen; ++l ) 
@@ -533,7 +532,6 @@ int main( int argc, char **argv )
          if ( cklen >= 1 )      
          {                      
             uint32_t l;
-            unsigned char uch1; 
 
             fputs( "    ", stdout ); 
             for ( l = 0; l < cklen; ++l ) 

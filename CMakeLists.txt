@@ -40,6 +40,24 @@ target_link_libraries(jzip PRIVATE ZLIB::ZLIB)
 
 add_executable(ckifzs ckifzs.c)
 
+if(CMAKE_C_COMPILER_ID MATCHES "^(AppleClang|Clang|GNU)$")
+    set(WARNING_FLAGS
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wstrict-prototypes
+        -Wmissing-prototypes
+        -Wold-style-definition
+        -Wimplicit-int
+        -Wreturn-type
+        -Werror
+    )
+
+    foreach(target jzip ckifzs)
+        target_compile_options(${target} PRIVATE ${WARNING_FLAGS})
+    endforeach()
+endif()
+
 if(ENABLE_SANITIZERS)
     if(NOT CMAKE_C_COMPILER_ID MATCHES "^(AppleClang|Clang|GNU)$")
         message(FATAL_ERROR "ENABLE_SANITIZERS requires Clang, AppleClang, or GCC")

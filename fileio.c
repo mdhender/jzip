@@ -50,9 +50,9 @@ static FILE *rfp = NULL;        /* Record file pointer */
 #ifndef USE_ZLIB
 static char gfpbuffer[BUFSIZ];  
 #endif
-#endif 
 static char sfpbuffer[BUFSIZ];  
 static char rfpbuffer[BUFSIZ];  
+#endif
 
 char save_name[Z_FILENAME_MAX + Z_PATHNAME_MAX + 1] = "story.sav";
 char script_name[Z_FILENAME_MAX + Z_PATHNAME_MAX + 1] = "story.scr";
@@ -73,7 +73,7 @@ static int save_restore( const char *, int );
  * Set up the story names intelligently.
  * John Holder, 28 Sept 1995
  */
-void set_names( const char *storyname )
+static void set_names( const char *storyname )
 {
    char *per_pos = 0;
 

@@ -49,7 +49,7 @@ void stop_interpreter( void )
  *
  */
 
-int interpret(  )
+int interpret( void )
 {
    zbyte_t opcode;
    zword_t specifier, operand[8];
